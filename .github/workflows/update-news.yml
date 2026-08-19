@@ -1,4 +1,4 @@
-name: Update News Data (RTHK)
+name: Update News Data (RTHK HK & Intl)
 
 on:
   push:
@@ -22,38 +22,46 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Fetch RTHK Local News
+      - name: Fetch RTHK Local & International News
         run: |
           node -e '
           const fs = require("fs");
 
-          async function getRTHKNews() {
+          async function fetchRSS(url) {
             try {
-              // 抓取香港電台本地即時新聞 RSS
-              const res = await fetch("https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml", {
-                headers: { "User-Agent": "Mozilla/5.0" }
+              const res = await fetch(url, {
+                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
               });
               const xmlText = await res.text();
-
-              // 解析 XML 中的新聞標題
               const matches = xmlText.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g) || [];
-              let newsList = matches
+              return matches
                 .map(m => m.replace(/<title><!\[CDATA\[/, "").replace(/\]\]><\/title>/, "").trim())
                 .filter(title => title && title !== "香港電台新聞簡訊" && title !== "即時新聞");
-
-              // 取前 10 條新聞
-              newsList = newsList.slice(0, 10).map(title => `【本地】${title}`);
-
-              if (newsList.length === 0) {
-                newsList = ["香港神託會培敦中學即時氣象與交通系統運行中"];
-              }
-
-              fs.writeFileSync("news.json", JSON.stringify(newsList, null, 2));
-              console.log("成功更新 RTHK 新聞，共 " + newsList.length + " 條。");
-            } catch (err) {
-              console.error("抓取 RTHK 失敗:", err);
-              fs.writeFileSync("news.json", JSON.stringify(["香港神託會培敦中學即時氣象與交通系統運行中"], null, 2));
+            } catch (e) {
+              console.error("Fetch error:", e);
+              return [];
             }
+          }
+
+          async function getRTHKNews() {
+            // 同時抓取香港本地新聞與國際新聞
+            const [localTitles, intlTitles] = await Promise.all([
+              fetchRSS("https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml"),
+              fetchRSS("https://rthk.hk/rthk/news/rss/c_expressnews_cinternational.xml")
+            ]);
+
+            let newsList = [];
+
+            // 各取前 6 條新聞
+            localTitles.slice(0, 10).forEach(title => newsList.push(`【本地】${title}`));
+            intlTitles.slice(0, 10).forEach(title => newsList.push(`【國際】${title}`));
+
+            if (newsList.length === 0) {
+              newsList = ["香港神託會培敦中學即時氣象與交通系統運行中"];
+            }
+
+            fs.writeFileSync("news.json", JSON.stringify(newsList, null, 2));
+            console.log("成功更新 RTHK 本地與國際新聞，共 " + newsList.length + " 條。");
           }
 
           getRTHKNews();
@@ -62,5 +70,5 @@ jobs:
       - name: Auto Commit and Push news.json
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto update RTHK HK news"
+          commit_message: "Auto update RTHK HK & Intl news"
           file_pattern: "news.json"
