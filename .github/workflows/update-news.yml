@@ -1,0 +1,66 @@
+name: Update News API Data
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # 每 15 分鐘自動執行一次
+  workflow_dispatch: # 支援在 GitHub 界面手動觸發
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch News API and Generate JSON
+        env:
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        run: |
+          node -e '
+          const fs = require("fs");
+          async function getNews() {
+            const key = process.env.NEWS_API_KEY;
+            try {
+              // 1. 抓取香港本地頭條
+              const hkRes = await fetch(`https://newsapi.org/v2/top-headlines?country=hk&pageSize=5&apiKey=${key}`);
+              const hkData = await hkRes.json();
+              
+              // 2. 抓取國際英文頭條
+              const intRes = await fetch(`https://newsapi.org/v2/top-headlines?language=en&pageSize=5&apiKey=${key}`);
+              const intData = await intRes.json();
+
+              let newsList = [];
+              if (hkData.articles) {
+                newsList.push(...hkData.articles.map(a => `【本地】${a.title}`));
+              }
+              if (intData.articles) {
+                newsList.push(...intData.articles.map(a => `【國際】${a.title}`));
+              }
+
+              if (newsList.length === 0) {
+                newsList = ["香港神託會培敦中學即時氣象與交通系統運行中"];
+              }
+
+              fs.writeFileSync("news.json", JSON.stringify(newsList, null, 2));
+              console.log("news.json generated successfully.");
+            } catch (err) {
+              console.error(err);
+              process.exit(1);
+            }
+          }
+          getNews();
+          '
+
+      - name: Commit and Push if updated
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add news.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update news.json" && git push)
