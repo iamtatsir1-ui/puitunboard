@@ -219,7 +219,7 @@ main{
 .eta-min{font-size:22px;font-weight:900;color:#2563eb;line-height:1.1}
 .no-bus{padding:10px;color:#94a3b8;font-weight:700;font-size:16px}
 
-/* 底部走馬燈 */
+/* 底部走馬燈 (CSS 物理動畫版) */
 footer{
   display:flex;
   align-items:center;
@@ -249,7 +249,6 @@ footer{
   overflow:hidden;
   white-space:nowrap;
   position:relative;
-  height:100%;
   display:flex;
   align-items:center;
 }
@@ -260,6 +259,15 @@ footer{
   font-weight:800;
   color:#0f172a;
   will-change:transform;
+}
+
+@keyframes rollPhysical {
+  0% {
+    transform: translateX(var(--start-x, 1600px));
+  }
+  100% {
+    transform: translateX(var(--end-x, -2000px));
+  }
 }
 </style>
 </head>
@@ -396,53 +404,37 @@ async function buses(){
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
 }
 
-/* ================= 人性化閱讀速度引擎 (每秒 2 隻字 = 60 px/s) ================= */
-let marqueePos = 0;
-// 當字體大小為 30px 時，1 個中文字寬約 30px
-// 使用者每秒閱讀 2 隻字 => 移動速度 = 2 字 × 30px = 60 像素/秒
-// 570 字長篇新聞總共需時約 285 秒（約 4.7 分鐘），閱讀體驗最舒服、不疾不徐！
-let marqueeSpeed = 1; 
-let lastFrameTime = null;
-
-function animateMarquee(currentTime) {
-  if (!lastFrameTime) lastFrameTime = currentTime;
-  const delta = (currentTime - lastFrameTime) / 1000;
-  lastFrameTime = currentTime;
-
-  const m = $('marquee');
-  const wrap = $('marquee-wrap');
-  
-  if (m && wrap) {
-    const wrapW = wrap.clientWidth || 1600;
-    const textW = m.scrollWidth;
-    
-    // 依據時間差平滑位移 (每秒精確移動 60px)
-    marqueePos -= marqueeSpeed * delta;
-    
-    // 當文字全部移出左側視窗時，從右側重新開始
-    if (marqueePos < -textW) {
-      marqueePos = wrapW;
-    }
-    
-    m.style.transform = `translateX(${marqueePos}px)`;
-  }
-  
-  requestAnimationFrame(animateMarquee);
-}
-
-// 設置新聞文字
+/* ================= 嚴格按「每秒2隻字」的動態動畫控制器 ================= */
 function setMarqueeText(text) {
   const m = $('marquee');
   const wrap = $('marquee-wrap');
-  if (m.textContent !== text) {
-    m.textContent = text;
-    // 重設起點在右側邊緣
-    marqueePos = wrap.clientWidth || 1600;
-  }
-}
+  if (!m || !wrap) return;
 
-// 啟動走馬燈 RAF 動畫
-requestAnimationFrame(animateMarquee);
+  m.textContent = text;
+  
+  // 計算總字數（包含標點符號）
+  const charCount = text.length;
+  
+  // 核心規則：每秒播放 2 隻字
+  // 570 字 => 570 / 2 = 285 秒
+  // 為了讓右側進入到左側離開都完美符合節奏，每字給予 0.5 秒
+  const duration = Math.max(10, Math.round(charCount / 2));
+  
+  // 視窗寬度與文字寬度 (px)
+  const wrapW = wrap.clientWidth || 1600;
+  const textW = m.scrollWidth || (charCount * 30);
+  
+  // 設置 CSS 自定義變數精確控制起點與終點
+  m.style.setProperty('--start-x', wrapW + 'px');
+  m.style.setProperty('--end-x', (-textW - 100) + 'px');
+  
+  // 重新觸發動畫
+  m.style.animation = 'none';
+  m.offsetHeight; // 強制重繪
+  m.style.animation = `rollPhysical ${duration}s linear infinite`;
+  
+  console.log(`[走馬燈更新] 總字數: ${charCount} 字，總播放時間: ${duration} 秒 (嚴格每秒 2 隻字)`);
+}
 
 async function fetchNews(){
   try{
