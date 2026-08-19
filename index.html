@@ -249,18 +249,17 @@ footer{
   overflow:hidden;
   white-space:nowrap;
   position:relative;
+  height:100%;
+  display:flex;
+  align-items:center;
 }
 .marquee{
   display:inline-block;
-  padding-left:100%;
-  animation:roll var(--marquee-duration, 100000000s) linear infinite;
+  white-space:nowrap;
   font-size:30px;
   font-weight:800;
   color:#0f172a;
-}
-@keyframes roll{
-  0%{transform:translateX(0)}
-  100%{transform:translateX(-100%)}
+  will-change:transform;
 }
 </style>
 </head>
@@ -307,7 +306,7 @@ footer{
   </main>
   <footer>
     <div class="tag" id="tag"><span class="rthk">NEWS</span><span class="news-label">即時新聞</span></div>
-    <div class="marquee-wrap">
+    <div class="marquee-wrap" id="marquee-wrap">
       <div class="marquee" id="marquee">香港神託會培敦中學即時氣象與交通系統運行中</div>
     </div>
   </footer>
@@ -397,26 +396,53 @@ async function buses(){
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
 }
 
-/* 核心：恆速走馬燈設置函數（以預設短標語 10 秒為基準比例，等速擴展） */
-function updateMarquee(text) {
+/* ================= 人性化閱讀速度引擎 (每秒 2 隻字 = 60 px/s) ================= */
+let marqueePos = 0;
+// 當字體大小為 30px 時，1 個中文字寬約 30px
+// 使用者每秒閱讀 2 隻字 => 移動速度 = 2 字 × 30px = 60 像素/秒
+// 570 字長篇新聞總共需時約 285 秒（約 4.7 分鐘），閱讀體驗最舒服、不疾不徐！
+let marqueeSpeed = 60; 
+let lastFrameTime = null;
+
+function animateMarquee(currentTime) {
+  if (!lastFrameTime) lastFrameTime = currentTime;
+  const delta = (currentTime - lastFrameTime) / 1000;
+  lastFrameTime = currentTime;
+
   const m = $('marquee');
-  const wrap = document.querySelector('.marquee-wrap');
-  m.textContent = text;
+  const wrap = $('marquee-wrap');
   
-  requestAnimationFrame(() => {
-    const textWidth = m.scrollWidth;
-    const wrapWidth = wrap.clientWidth || 1600;
-    const totalDistance = textWidth + wrapWidth;
+  if (m && wrap) {
+    const wrapW = wrap.clientWidth || 1600;
+    const textW = m.scrollWidth;
     
-    // 基準計算：預設 22 字標語 (~660px) + 視窗 (1600px) = 2260px，需時 10 秒
-    // 等效速度提升至每秒 226 像素 (226 px/s)
-    const speedPxPerSec = 226; 
-    const duration = Math.max(4, totalDistance / speedPxPerSec);
+    // 依據時間差平滑位移 (每秒精確移動 60px)
+    marqueePos -= marqueeSpeed * delta;
     
-    // 動態更新 CSS 變數
-    m.style.setProperty('--marquee-duration', `${duration.toFixed(1)}s`);
-  });
+    // 當文字全部移出左側視窗時，從右側重新開始
+    if (marqueePos < -textW) {
+      marqueePos = wrapW;
+    }
+    
+    m.style.transform = `translateX(${marqueePos}px)`;
+  }
+  
+  requestAnimationFrame(animateMarquee);
 }
+
+// 設置新聞文字
+function setMarqueeText(text) {
+  const m = $('marquee');
+  const wrap = $('marquee-wrap');
+  if (m.textContent !== text) {
+    m.textContent = text;
+    // 重設起點在右側邊緣
+    marqueePos = wrap.clientWidth || 1600;
+  }
+}
+
+// 啟動走馬燈 RAF 動畫
+requestAnimationFrame(animateMarquee);
 
 async function fetchNews(){
   try{
@@ -424,11 +450,11 @@ async function fetchNews(){
     if(!r.ok)throw Error();
     let data=await r.json();
     if(data&&data.length>0){
-      updateMarquee(data.join(' ｜ '));
+      setMarqueeText(data.join('  ✦  '));
       return;
     }
   }catch(e){}
-  updateMarquee('香港神託會培敦中學即時氣象與交通系統運行中');
+  setMarqueeText('香港神託會培敦中學即時氣象與交通系統運行中');
 }
 
 clock();
