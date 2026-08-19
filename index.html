@@ -65,10 +65,10 @@ header{
 .date{font-size:28px;font-weight:800;color:#e11d48}
 .time{font-size:32px;font-weight:900;color:#0284c7;font-variant-numeric:tabular-nums}
 
-/* 主體佈局 */
+/* 主體佈局：平分左右 (1fr 1fr) */
 main{
   display:grid;
-  grid-template-columns:460px 1fr;
+  grid-template-columns:1fr 1fr;
   gap:20px;
   min-height:0;
 }
@@ -79,7 +79,7 @@ main{
   min-height:0;
 }
 .head{
-  font-size:22px;
+  font-size:24px;
   font-weight:800;
   display:flex;
   justify-content:space-between;
@@ -88,136 +88,194 @@ main{
   border-bottom:2px dashed #e2e8f0;
 }
 .badge{
-  font-size:15px;
-  font-weight:600;
-  padding:4px 12px;
+  font-size:16px;
+  font-weight:700;
+  padding:4px 14px;
   border-radius:12px;
   background:#f1f5f9;
   color:#64748b;
 }
 
-/* 氣象卡片 */
+/* 氣象卡片 (左側 50%)：三個區塊 1:1:1 等高平分 */
 .weather{
   flex:1;
   padding-top:16px;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
+  display:grid;
+  grid-template-rows:1fr 1fr 1fr;
+  gap:16px;
+  min-height:0;
 }
+
+/* 第 1 格：即時氣溫與天色 */
 .hero{
   display:flex;
   justify-content:space-between;
   align-items:center;
   background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);
-  padding:16px 20px;
-  border-radius:16px;
-  border:1px solid #bfdbfe;
+  padding:0 32px;
+  border-radius:20px;
+  border:1.5px solid #bfdbfe;
+  height:100%;
 }
-.temp{font-size:68px;font-weight:900;line-height:1;color:#1d4ed8}
+.temp{font-size:86px;font-weight:900;line-height:1;color:#1d4ed8}
 .desc{
-  font-size:22px;
-  font-weight:800;
+  font-size:32px;
+  font-weight:900;
   background:#fff;
   color:#0369a1;
-  padding:8px 16px;
-  border-radius:12px;
-  box-shadow:0 2px 8px rgba(3,105,161,0.1);
+  padding:14px 28px;
+  border-radius:18px;
+  box-shadow:0 4px 12px rgba(3,105,161,0.12);
+  border:1px solid #e0f2fe;
 }
+
+/* 第 2 格：濕度與這刻降雨狀況 (兩小格平分) */
 .rain-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:12px;
+  gap:16px;
+  height:100%;
 }
 .rain-card{
   background:#f8fafc;
-  border:1px solid #e2e8f0;
-  border-radius:16px;
-  padding:16px;
+  border:1.5px solid #e2e8f0;
+  border-radius:20px;
+  padding:0 24px;
   display:flex;
   flex-direction:column;
   justify-content:center;
-  gap:4px;
+  gap:6px;
+  height:100%;
 }
-.label{font-size:18px;font-weight:700;color:#64748b}
-.value{font-size:30px;font-weight:900;color:#0f172a;line-height:1.2}
-.sub{font-size:14px;color:#94a3b8;margin-top:2px}
+.label{font-size:22px;font-weight:800;color:#64748b}
+.value{font-size:44px;font-weight:900;color:#0f172a;line-height:1.1}
+.sub{font-size:16px;font-weight:600;color:#94a3b8}
 
-/* 巴士到站卡片 */
-.bus-view{
-  flex:1;
+/* 第 3 格：下一個小時降雨機率 */
+.future-rain-card{
+  background:#f8fafc;
+  border:1.5px solid #e2e8f0;
+  border-radius:20px;
+  padding:0 28px;
   display:flex;
   flex-direction:column;
+  justify-content:center;
+  gap:6px;
+  height:100%;
+}
+.future-header{
+  display:flex;
   justify-content:space-between;
-  padding-top:14px;
+  align-items:center;
+}
+.future-val{
+  font-size:46px;
+  font-weight:900;
+  color:#0284c7;
+  line-height:1.1;
+}
+
+/* 巴士到站卡片 (右側 50%)：兩個站表格平分上下 (1:1 等高) */
+.bus-view{
+  flex:1;
+  display:grid;
+  grid-template-rows:1fr 1fr;
+  gap:16px;
+  padding-top:16px;
   min-height:0;
 }
 .bus-group{
   background:#f8fafc;
-  padding:12px 14px;
-  border:1px solid #e2e8f0;
-  border-radius:16px;
+  padding:14px 18px;
+  border:1.5px solid #e2e8f0;
+  border-radius:20px;
   display:flex;
   flex-direction:column;
-  gap:8px;
+  justify-content:space-between;
+  min-height:0;
+  height:100%;
 }
 .bus-title{
-  font-size:20px;
+  font-size:22px;
   font-weight:900;
-  color:#334155;
+  color:#1e293b;
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:10px;
+  padding-bottom:6px;
+  border-bottom:1px solid #e2e8f0;
+  flex:none;
 }
 .route-list{
-  display:flex;
-  flex-direction:column;
+  flex:1;
+  display:grid;
+  grid-template-rows:1fr 1fr 1fr;
   gap:8px;
+  min-height:0;
+  padding-top:8px;
 }
 .route{
   background:#fff;
-  border-radius:12px;
-  padding:8px 14px;
+  border-radius:14px;
+  padding:0 16px;
   display:flex;
   align-items:center;
+  justify-content:space-between;
   box-shadow:0 2px 6px rgba(0,0,0,0.03);
   border:1px solid #f1f5f9;
+  height:100%;
+  min-height:0;
 }
 .route-meta{
   display:flex;
   align-items:center;
-  gap:14px;
+  gap:16px;
+  min-width:0;
 }
 .route-no{
-  font-size:26px;
+  font-size:28px;
   font-weight:900;
   line-height:1;
   background:#00838f;
   color:#fff;
-  padding:6px 12px;
-  border-radius:8px;
-  min-width:90px;
+  padding:6px 14px;
+  border-radius:10px;
+  min-width:96px;
   text-align:center;
+  flex:none;
 }
 .route-dest{
-  font-size:20px;
+  font-size:22px;
   font-weight:800;
   color:#1e293b;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 .etas{
   display:flex;
   gap:12px;
   margin-left:auto;
+  flex:none;
 }
 .eta{
   background:#f1f5f9;
   border-radius:10px;
   padding:6px 14px;
   text-align:center;
-  min-width:115px;
+  min-width:118px;
 }
 .eta-clock{font-size:17px;font-weight:800;color:#64748b}
-.eta-min{font-size:22px;font-weight:900;color:#2563eb;line-height:1.1}
-.no-bus{padding:10px;color:#94a3b8;font-weight:700;font-size:16px}
+.eta-min{font-size:23px;font-weight:900;color:#2563eb;line-height:1.1}
+.no-bus{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+  color:#94a3b8;
+  font-weight:800;
+  font-size:18px;
+}
 
 /* 底部走馬燈 */
 footer{
@@ -244,43 +302,32 @@ footer{
   position:relative;
   padding:4px 8px;
 }
-.rthk{font-size:26px;letter-spacing:1px}
-.news-label{font-size:15px;margin-top:2px}
+.rthk{font-size:24px;letter-spacing:1px}
 
-/* 走馬燈速度自訂控制器 */
-.speed-control{
+/* 單鍵速度切換按鈕 */
+.speed-toggle-btn{
+  margin-top:5px;
+  background:rgba(255,255,255,0.22);
+  border:1.5px solid rgba(255,255,255,0.6);
+  color:#fff;
+  padding:4px 12px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:900;
+  cursor:pointer;
   display:flex;
   align-items:center;
-  justify-content:center;
-  gap:5px;
-  margin-top:6px;
-  background:rgba(0,0,0,0.25);
-  padding:3px 8px;
-  border-radius:8px;
-  font-size:13px;
-  font-weight:700;
-  width:92%;
+  gap:6px;
+  transition:all 0.15s ease;
+  user-select:none;
 }
-.speed-control span{
-  font-size:12px;
-  color:#fecaca;
-  white-space:nowrap;
+.speed-toggle-btn:hover{
+  background:rgba(255,255,255,0.35);
+  border-color:#fff;
+  transform:scale(1.03);
 }
-.speed-control input{
-  width:55px;
-  height:24px;
-  background:#fff;
-  color:#0f172a;
-  border:1px solid #cbd5e1;
-  border-radius:5px;
-  text-align:center;
-  font-weight:900;
-  font-size:14px;
-  outline:none;
-}
-.speed-control input:focus{
-  border-color:#38bdf8;
-  box-shadow:0 0 0 2px rgba(56,189,248,0.4);
+.speed-toggle-btn:active{
+  transform:scale(0.97);
 }
 
 .marquee-wrap{
@@ -323,27 +370,50 @@ footer{
     </div>
   </header>
   <main>
+    <!-- 左側 50%：氣象數據 (3個等高格 1:1:1) -->
     <section class="card">
       <div class="head"><span>☀️ 即時校園氣象數據</span><span class="badge" id="station">黃大仙站</span></div>
       <div class="weather">
+        <!-- 第 1 格：氣溫與天況 -->
         <div class="hero">
           <div class="temp" id="temp">--°C</div>
           <div><div class="desc" id="desc">載入中</div></div>
         </div>
+
+        <!-- 第 2 格：濕度與這刻降雨狀況 (兩小格平分) -->
         <div class="rain-grid">
-          <div class="rain-card"><span class="label">相對濕度</span><span class="value" id="hum">--%</span></div>
-          <div class="rain-card"><span class="label">這刻降雨狀況</span><span class="value" id="rain">0 mm</span><span class="sub">過去一小時雨量</span></div>
+          <div class="rain-card">
+            <span class="label">相對濕度</span>
+            <span class="value" id="hum">--%</span>
+          </div>
+          <div class="rain-card">
+            <span class="label">這刻降雨狀況</span>
+            <span class="value" id="rain">0 mm</span>
+            <span class="sub">過去一小時雨量</span>
+          </div>
         </div>
-        <div class="rain-card"><span class="label">下一個小時降雨機率</span><span class="value" id="next">分析中...</span><span class="sub">預報源：天文台天色分析</span></div>
+
+        <!-- 第 3 格：下一個小時降雨機率 -->
+        <div class="future-rain-card">
+          <div class="future-header">
+            <span class="label">下一個小時降雨機率</span>
+            <span class="future-val" id="next">分析中...</span>
+          </div>
+          <span class="sub">預報源：天文台天色分析</span>
+        </div>
       </div>
     </section>
+
+    <!-- 右側 50%：巴士到站時間 (兩個表格平分上下 1:1 等高) -->
     <section class="card bus-card">
       <div class="head"><span>🚌 巴士到站時間</span><span class="badge" id="bs">即時刷新</span></div>
       <div class="bus-view">
+        <!-- 站 1：真鐸學校 -->
         <div class="bus-group">
           <div class="bus-title">🚏 真鐸學校</div>
           <div class="route-list" id="s1"></div>
         </div>
+        <!-- 站 2：斧山道運動場 -->
         <div class="bus-group">
           <div class="bus-title">🚏 斧山道運動場</div>
           <div class="route-list" id="s2"></div>
@@ -353,12 +423,11 @@ footer{
   </main>
   <footer>
     <div class="tag" id="tag">
-      <span class="rthk">NEWS 即時新聞</span>
-      <div class="speed-control">
-        <span>⏱️ 跑完:</span>
-        <input type="number" id="speed-input" value="285" min="5" max="3600" step="5" title="輸入多少秒跑完整條新聞">
-        <span>秒</span>
-      </div>
+      <span class="rthk">RTHK 即時新聞</span>
+      <button class="speed-toggle-btn" id="speed-btn" title="點擊切換走馬燈速度">
+        <span>⏱️ 速度:</span>
+        <span id="speed-label">標準 (285秒)</span>
+      </button>
     </div>
     <div class="marquee-wrap" id="marquee-wrap">
       <div class="marquee" id="marquee">香港神託會培敦中學即時氣象與交通系統運行中</div>
@@ -373,7 +442,16 @@ const $=id=>document.getElementById(id),
 let routes, stamp=0, stops={};
 let currentNewsText = '香港神託會培敦中學即時氣象與交通系統運行中';
 
-/* 安全存儲封裝（相容 Sayo 預覽環境 window.sayoStorage 與標準 localStorage） */
+/* 預設 4 段常用循環速度檔位：按一下自動輪換 */
+const SPEED_MODES = [
+  { label: '標準 (285秒)', sec: 285 }, // 570字 每秒2字
+  { label: '舒適慢速 (380秒)', sec: 380 }, // 每秒1.5字
+  { label: '適中 (190秒)', sec: 190 }, // 每秒3字
+  { label: '快速 (100秒)', sec: 100 }
+];
+let currentSpeedIndex = 0;
+
+/* 安全存儲封裝 */
 const safeStore = {
   async get(k) {
     try {
@@ -389,7 +467,7 @@ const safeStore = {
   }
 };
 
-/* 自動全屏等比縮放適配 */
+/* 自動全屏等比縮放適配（支援 1080p、4K、平板、窄屏等任何電視/顯示器） */
 function autoScale() {
   const scaler = document.getElementById('app-scaler');
   const baseW = 1920;
@@ -467,18 +545,19 @@ async function buses(){
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
 }
 
-/* ================= 走馬燈播放控制器 (支援自訂輸入秒數) ================= */
+/* ================= 走馬燈播放控制器 ================= */
 function renderMarquee() {
   const m = $('marquee');
   const wrap = $('marquee-wrap');
-  const speedInput = $('speed-input');
   if (!m || !wrap) return;
 
   m.textContent = currentNewsText;
   
-  let duration = parseFloat(speedInput.value) || 285;
-  if (duration < 5) duration = 5;
+  const currentMode = SPEED_MODES[currentSpeedIndex];
+  const duration = currentMode.sec;
   
+  $('speed-label').textContent = currentMode.label;
+
   const wrapW = wrap.clientWidth || 1600;
   const textW = m.scrollWidth || (currentNewsText.length * 30);
   
@@ -486,25 +565,27 @@ function renderMarquee() {
   m.style.setProperty('--end-x', (-textW - 100) + 'px');
   
   m.style.animation = 'none';
-  m.offsetHeight; // 強制重繪
+  m.offsetHeight;
   m.style.animation = `rollPhysical ${duration}s linear infinite`;
-  
-  // 安全存儲秒數設定
-  safeStore.set('saved_marquee_seconds', duration);
 }
 
-// 監聽使用者輸入秒數事件
-$('speed-input').addEventListener('input', renderMarquee);
-$('speed-input').addEventListener('change', renderMarquee);
+/* 單鍵點擊切換速度 */
+$('speed-btn').addEventListener('click', async () => {
+  currentSpeedIndex = (currentSpeedIndex + 1) % SPEED_MODES.length;
+  renderMarquee();
+  await safeStore.set('saved_speed_index', currentSpeedIndex);
+});
 
-// 初始化讀取先前儲存的秒數
 async function initSavedSpeed() {
-  const savedSec = await safeStore.get('saved_marquee_seconds');
-  if (savedSec) {
-    $('speed-input').value = savedSec;
+  const savedIdx = await safeStore.get('saved_speed_index');
+  if (savedIdx !== null && !isNaN(savedIdx)) {
+    const idx = parseInt(savedIdx, 10);
+    if (idx >= 0 && idx < SPEED_MODES.length) {
+      currentSpeedIndex = idx;
+    }
   }
+  renderMarquee();
 }
-initSavedSpeed();
 
 async function fetchNews(){
   try{
@@ -524,6 +605,7 @@ async function fetchNews(){
 clock();
 weather();
 buses();
+initSavedSpeed();
 fetchNews();
 
 setInterval(clock,1000);
