@@ -2,19 +2,18 @@ name: Update News API Data
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # 每 15 分鐘執行一次
+    - cron: '*/15 * * * *'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,31 +33,35 @@ jobs:
           const converter = OpenCC.Converter({ from: "cn", to: "hk" });
 
           async function fetchNews(url) {
-            const res = await fetch(url, {
-              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
-            });
-            const data = await res.json();
-            if (data.status !== "ok") {
-              console.error("NewsAPI 回應異常:", data.message || data);
+            try {
+              const res = await fetch(url, {
+                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+              });
+              const data = await res.json();
+              if (data.status === "ok" && Array.isArray(data.articles)) {
+                return data.articles;
+              } else {
+                console.log("API 回應異常:", data.message || data.status || "無資料");
+                return [];
+              }
+            } catch (e) {
+              console.log("Fetch 失敗:", e.message);
               return [];
             }
-            return data.articles || [];
           }
 
-          async function getNews() {
+          async function main() {
             const key = process.env.NEWS_API_KEY;
-            if (!key) {
-              console.error("錯誤：Secrets 中未找到 NEWS_API_KEY！");
-              process.exit(1);
-            }
+            let newsList = [];
 
-            try {
+            if (!key) {
+              console.log("警告：Secrets 中未找到 NEWS_API_KEY，使用預設文字。");
+            } else {
               const [hkArticles, zhArticles] = await Promise.all([
                 fetchNews(`https://newsapi.org/v2/top-headlines?country=hk&pageSize=8&apiKey=${key}`),
                 fetchNews(`https://newsapi.org/v2/top-headlines?language=zh&pageSize=8&apiKey=${key}`)
               ]);
 
-              let newsList = [];
               const seenTitles = new Set();
 
               hkArticles.forEach(a => {
@@ -74,20 +77,17 @@ jobs:
                   newsList.push(`【國際】${converter(a.title)}`);
                 }
               });
-
-              if (newsList.length === 0) {
-                newsList = ["香港神託會培敦中學即時氣象與交通系統運行中"];
-              }
-
-              fs.writeFileSync("news.json", JSON.stringify(newsList, null, 2));
-              console.log("已成功產生 " + newsList.length + " 條新聞紀錄至 news.json");
-            } catch (err) {
-              console.error("執行過程發生錯誤:", err);
-              process.exit(1);
             }
+
+            if (newsList.length === 0) {
+              newsList = ["香港神託會培敦中學即時氣象與交通系統運行中"];
+            }
+
+            fs.writeFileSync("news.json", JSON.stringify(newsList, null, 2));
+            console.log("成功更新 news.json，共 " + newsList.length + " 條新聞。");
           }
 
-          getNews();
+          main();
           '
 
       - name: Auto Commit and Push news.json
