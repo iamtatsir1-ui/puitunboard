@@ -6,130 +6,342 @@
 <title>香港神託會培敦中學 - 校園氣象與交通儀表板</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-:root{--fit:1;--temp:calc(6.2rem * var(--fit));--top:calc(var(--temp)/3);--foot:12.9vh;--r:20px}
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif}
-body{height:100vh;padding:16px;overflow:hidden;display:grid;grid-template-rows:calc(var(--top) + 20px) minmax(0,1fr) var(--foot);gap:14px;background:#f8fafc radial-gradient(#cbd5e1 1px,transparent 1px);background-size:24px 24px;color:#1e293b}
-header,.card,footer{background:#ffffffef;border-radius:var(--r);box-shadow:0 4px 20px #0000000d;overflow:hidden}
-header{padding:8px 20px;display:flex;align-items:center}
-.header-row{display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}
-.school-name{font-size:var(--top);font-weight:900;line-height:1;color:#fff;letter-spacing:.04em;-webkit-text-stroke:1px #5e9ed5;text-shadow:-2px -2px #1264ab,2px -2px #1264ab,-2px 2px #1264ab,2px 2px #1264ab;padding:2px 12px 4px 1px;border-right:3px solid #cbd5e1}
-.date,.time{font-size:var(--top);font-weight:900;line-height:1}
-.date{color:#e11d48}
-.time{color:#0284c7}
-main{display:grid;grid-template-columns:1fr 1.15fr;gap:16px;min-height:0}
-.card{padding:18px;display:flex;flex-direction:column;min-height:0}
-.head{font-size:1.2rem;font-weight:800;display:flex;justify-content:space-between;gap:8px;padding-bottom:10px;border-bottom:2px dashed #e2e8f0;white-space:nowrap}
-.badge{font-size:.82rem;padding:3px 10px;border-radius:12px;background:#f1f5f9;color:#64748b}
-.weather{height:100%;padding-top:10px;display:flex;flex-direction:column;gap:10px;min-height:0}
-.hero{display:flex;justify-content:space-between;align-items:flex-start}
-.temp{font-size:var(--temp);font-weight:900;line-height:1;color:#2563eb}
-.desc{font-size:1.2rem;font-weight:800;background:#e0f2fe;color:#0369a1;padding:6px 14px;border-radius:12px}
-.rain-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;height:25%;flex:none;min-height:0}
-.rain-card{--rf:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;display:flex;flex-direction:column;justify-content:center;gap:5px;overflow:hidden;min-height:0}
-.weather>.rain-card{height:25%;flex:none}
-.rain-card span{display:block;white-space:nowrap;line-height:1.08}
-.label{font-size:calc(var(--top)*var(--rf));font-weight:700;color:#64748b}
-.value{font-size:calc(var(--top)*var(--rf));font-weight:900;color:#0f172a}
-.sub{font-size:calc(var(--top)*.45*var(--rf));color:#94a3b8}
-.bus-card{--pf:1}
-.bus-view{flex:1;min-height:0;overflow:hidden}
-.bus-sections{display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:100%;transform:scale(var(--pf));transform-origin:top left;width:calc(100% / var(--pf))}
-.bus-group{background:#f8fafc;padding:8px 10px;border:1px solid #e2e8f0;border-radius:16px}
-.bus-title{font-size:1.05rem;font-weight:900;margin-bottom:6px}
-.route{--rf:1;position:relative;height:calc(68px * var(--rf));overflow:hidden;background:#fff;border-radius:12px;margin-bottom:6px}
-.route-inner{position:absolute;width:calc(100% / var(--rf));height:68px;padding:7px 10px;display:flex;align-items:center;gap:10px;white-space:nowrap;transform:scale(var(--rf));transform-origin:top left}
-.route-meta{display:flex;align-items:center;gap:10px;min-width:0}
-.route-no{font-size:clamp(1rem,2.9vw,2.2rem);font-weight:900;line-height:1;background:#00838f;color:#fff;padding:3px 7px;border-radius:8px}
-.route-dest{font-size:calc(clamp(1rem,2.9vw,2.2rem)*.5);font-weight:900}
-.etas{display:flex;gap:8px;margin-left:auto}
-.eta{background:#f1f5f9;border-radius:10px;padding:4px 10px;text-align:center;min-width:100px}
-.eta-clock{font-size:1.55rem;font-weight:900}
-.eta-min{font-size:1.35rem;font-weight:900;color:#2563eb}
-.no-bus{padding:8px;color:#94a3b8;font-weight:700;white-space:nowrap}
-footer{display:flex;align-items:center;min-height:0;background:#fff;color:#000;border:1px solid #cbd5e1}
-.tag{height:100%;width:200px;display:flex;flex-direction:column;justify-content:center;align-items:center;flex:none;background:#bd3c28;color:#fff;border-right:2px solid #8e2719;font-weight:900;line-height:1}
-.rthk{font-size:calc(var(--foot)*.45)}
-.news-label{font-size:calc(var(--foot)*.27);margin-top:2px}
-.marquee-wrap{width:100%;overflow:hidden;white-space:nowrap}
-.marquee{display:inline-block;padding-left:100%;animation:roll 100s linear infinite;font-size:calc(var(--foot)*.62);font-weight:800}
-@keyframes roll{to{transform:translateX(-100%)}}
+html,body{width:100%;height:100%;overflow:hidden;background:#0f172a}
+
+/* 容器視窗：保持標準 16:9 (1920x1080) 基準並根據屏幕自動縮放與居中 */
+#app-scaler{
+  width:1920px;
+  height:1080px;
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform-origin:center center;
+  display:grid;
+  grid-template-rows:80px 1fr 90px;
+  gap:16px;
+  padding:20px;
+  background:#f8fafc radial-gradient(#cbd5e1 1.5px,transparent 1.5px);
+  background-size:24px 24px;
+  color:#1e293b;
+}
+
+header,.card,footer{
+  background:#ffffffef;
+  border-radius:20px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.06);
+  backdrop-filter:blur(10px);
+}
+
+/* 頂部導覽列 */
+header{
+  padding:0 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.header-row{
+  display:flex;
+  align-items:center;
+  gap:20px;
+  width:100%;
+}
+.school-name{
+  font-size:32px;
+  font-weight:900;
+  color:#fff;
+  letter-spacing:.04em;
+  -webkit-text-stroke:1.2px #0369a1;
+  text-shadow:-2px -2px #0284c7, 2px -2px #0284c7, -2px 2px #0284c7, 2px 2px #0284c7;
+  padding-right:20px;
+  border-right:3px solid #cbd5e1;
+}
+.date-time-box{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-left:auto;
+}
+.date{font-size:28px;font-weight:800;color:#e11d48}
+.time{font-size:32px;font-weight:900;color:#0284c7;font-variant-numeric:tabular-nums}
+
+/* 主體佈局 */
+main{
+  display:grid;
+  grid-template-columns:460px 1fr;
+  gap:20px;
+  min-height:0;
+}
+.card{
+  padding:22px;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+.head{
+  font-size:22px;
+  font-weight:800;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding-bottom:12px;
+  border-bottom:2px dashed #e2e8f0;
+}
+.badge{
+  font-size:15px;
+  font-weight:600;
+  padding:4px 12px;
+  border-radius:12px;
+  background:#f1f5f9;
+  color:#64748b;
+}
+
+/* 氣象卡片 */
+.weather{
+  flex:1;
+  padding-top:16px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.hero{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);
+  padding:16px 20px;
+  border-radius:16px;
+  border:1px solid #bfdbfe;
+}
+.temp{font-size:68px;font-weight:900;line-height:1;color:#1d4ed8}
+.desc{
+  font-size:22px;
+  font-weight:800;
+  background:#fff;
+  color:#0369a1;
+  padding:8px 16px;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(3,105,161,0.1);
+}
+.rain-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.rain-card{
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  border-radius:16px;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+}
+.label{font-size:18px;font-weight:700;color:#64748b}
+.value{font-size:30px;font-weight:900;color:#0f172a;line-height:1.2}
+.sub{font-size:14px;color:#94a3b8;margin-top:2px}
+
+/* 巴士到站卡片 */
+.bus-view{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding-top:14px;
+  min-height:0;
+}
+.bus-group{
+  background:#f8fafc;
+  padding:12px 14px;
+  border:1px solid #e2e8f0;
+  border-radius:16px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.bus-title{
+  font-size:20px;
+  font-weight:900;
+  color:#334155;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.route-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.route{
+  background:#fff;
+  border-radius:12px;
+  padding:8px 14px;
+  display:flex;
+  align-items:center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.03);
+  border:1px solid #f1f5f9;
+}
+.route-meta{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.route-no{
+  font-size:26px;
+  font-weight:900;
+  line-height:1;
+  background:#00838f;
+  color:#fff;
+  padding:6px 12px;
+  border-radius:8px;
+  min-width:90px;
+  text-align:center;
+}
+.route-dest{
+  font-size:20px;
+  font-weight:800;
+  color:#1e293b;
+}
+.etas{
+  display:flex;
+  gap:12px;
+  margin-left:auto;
+}
+.eta{
+  background:#f1f5f9;
+  border-radius:10px;
+  padding:6px 14px;
+  text-align:center;
+  min-width:115px;
+}
+.eta-clock{font-size:17px;font-weight:800;color:#64748b}
+.eta-min{font-size:22px;font-weight:900;color:#2563eb;line-height:1.1}
+.no-bus{padding:10px;color:#94a3b8;font-weight:700;font-size:16px}
+
+/* 底部走馬燈 */
+footer{
+  display:flex;
+  align-items:center;
+  background:#fff;
+  border:1px solid #cbd5e1;
+  overflow:hidden;
+}
+.tag{
+  height:100%;
+  width:220px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  flex:none;
+  background:#bd3c28;
+  color:#fff;
+  border-right:3px solid #8e2719;
+  font-weight:900;
+  line-height:1;
+  z-index:2;
+}
+.rthk{font-size:32px;letter-spacing:1px}
+.news-label{font-size:18px;margin-top:4px}
+.marquee-wrap{
+  flex:1;
+  overflow:hidden;
+  white-space:nowrap;
+  position:relative;
+}
+.marquee{
+  display:inline-block;
+  padding-left:100%;
+  animation:roll 100s linear infinite;
+  font-size:30px;
+  font-weight:800;
+  color:#0f172a;
+}
+@keyframes roll{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-100%)}
+}
 </style>
 </head>
 <body>
-<header>
-  <div class="header-row">
-    <div class="school-name">香港神託會培敦中學</div>
-    <div class="date" id="date">--年--月--日</div>
-    <div class="time" id="time">--:--:--</div>
-  </div>
-</header>
-<main>
-  <section class="card">
-    <div class="head"><span>☀️ 即時校園氣象數據</span><span class="badge" id="station">黃大仙站</span></div>
-    <div class="weather">
-      <div class="hero">
-        <div class="temp" id="temp">--°C</div>
-        <div><div class="desc" id="desc">載入中</div></div>
+
+<div id="app-scaler">
+  <header>
+    <div class="header-row">
+      <div class="school-name">香港神託會培敦中學</div>
+      <div class="date-time-box">
+        <div class="date" id="date">--年--月--日</div>
+        <div class="time" id="time">--:--:--</div>
       </div>
-      <div class="rain-grid">
-        <div class="rain-card"><span class="label">相對濕度</span><span class="value" id="hum">--%</span></div>
-        <div class="rain-card"><span class="label">這刻降雨狀況</span><span class="value" id="rain">0 mm</span><span class="sub">過去一小時黃大仙雨量</span></div>
-      </div>
-      <div class="rain-card"><span class="label">下一個小時降雨機率</span><span class="value" id="next">分析中...</span><span class="sub">預報源：基於現時天色與雨量</span></div>
     </div>
-  </section>
-  <section class="card bus-card">
-    <div class="head"><span>🚌 巴士到站時間</span><span class="badge" id="bs">即時刷新</span></div>
-    <div class="bus-view">
-      <div class="bus-sections">
+  </header>
+  <main>
+    <section class="card">
+      <div class="head"><span>☀️ 即時校園氣象數據</span><span class="badge" id="station">黃大仙站</span></div>
+      <div class="weather">
+        <div class="hero">
+          <div class="temp" id="temp">--°C</div>
+          <div><div class="desc" id="desc">載入中</div></div>
+        </div>
+        <div class="rain-grid">
+          <div class="rain-card"><span class="label">相對濕度</span><span class="value" id="hum">--%</span></div>
+          <div class="rain-card"><span class="label">這刻降雨狀況</span><span class="value" id="rain">0 mm</span><span class="sub">過去一小時雨量</span></div>
+        </div>
+        <div class="rain-card"><span class="label">下一個小時降雨機率</span><span class="value" id="next">分析中...</span><span class="sub">預報源：天文台天色分析</span></div>
+      </div>
+    </section>
+    <section class="card bus-card">
+      <div class="head"><span>🚌 巴士到站時間</span><span class="badge" id="bs">即時刷新</span></div>
+      <div class="bus-view">
         <div class="bus-group">
           <div class="bus-title">🚏 真鐸學校</div>
-          <div id="s1"></div>
+          <div class="route-list" id="s1"></div>
         </div>
         <div class="bus-group">
           <div class="bus-title">🚏 斧山道運動場</div>
-          <div id="s2"></div>
+          <div class="route-list" id="s2"></div>
         </div>
       </div>
+    </section>
+  </main>
+  <footer>
+    <div class="tag" id="tag"><span class="rthk">NEWS</span><span class="news-label">即時新聞</span></div>
+    <div class="marquee-wrap">
+      <div class="marquee" id="marquee">香港神託會培敦中學即時氣象與交通系統運行中</div>
     </div>
-  </section>
-</main>
-<footer>
-  <div class="tag" id="tag"><span class="rthk">NEWS</span><span class="news-label">即時新聞</span></div>
-  <div class="marquee-wrap">
-    <div class="marquee" id="marquee">香港神託會培敦中學即時氣象與交通系統運行中</div>
-  </div>
-</footer>
+  </footer>
+</div>
+
 <script>
-const $=id=>document.getElementById(id),K='https://data.etabus.gov.hk/v1/transport/kmb',H='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc';
-let routes,stamp=0,stops={};
+const $=id=>document.getElementById(id),
+      K='https://data.etabus.gov.hk/v1/transport/kmb',
+      H='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc';
+let routes, stamp=0, stops={};
+
+/* 自動全屏等比縮放適配（支援 1080p、4K、平板、窄屏等任何電視/顯示器） */
+function autoScale() {
+  const scaler = document.getElementById('app-scaler');
+  const baseW = 1920;
+  const baseH = 1080;
+  const winW = window.innerWidth;
+  const winH = window.innerHeight;
+  
+  // 計算等比縮放係數 (contain 模式，保證 100% 內容完整可見且不變形、不溢出)
+  const scale = Math.min(winW / baseW, winH / baseH);
+  scaler.style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
+
+window.addEventListener('resize', autoScale);
+window.addEventListener('load', autoScale);
+autoScale();
 
 async function get(u){let r=await fetch(u);if(!r.ok)throw Error();return r.json()}
 
-function fit(){
-  let h=document.querySelector('header'),r=document.querySelector('.header-row');
-  document.documentElement.style.setProperty('--fit',1);
-  document.documentElement.style.setProperty('--fit',Math.max(.15,Math.min(1,(h.clientWidth-40)/r.scrollWidth)).toFixed(3));
-  $('tag').style.width=Math.max(125,document.querySelector('.bus-card').clientWidth*.33)+'px';
-  document.querySelectorAll('.rain-card').forEach(c=>{
-    let f=1;c.style.setProperty('--rf',f);
-    for(let n=0;n<90&&(c.scrollWidth>c.clientWidth||c.scrollHeight>c.clientHeight);n++)c.style.setProperty('--rf',f=Math.max(.12,f-.01))
-  });
-  let v=document.querySelector('.bus-view'),s=document.querySelector('.bus-sections'),b=document.querySelector('.bus-card');
-  b.style.setProperty('--pf',1);
-  document.querySelectorAll('.route').forEach(x=>{
-    let f=1,i=x.firstElementChild;
-    for(let n=0;n<80&&i.scrollWidth>x.clientWidth/f;n++)f-=.02;
-    x.style.setProperty('--rf',Math.max(.16,f))
-  });
-  b.style.setProperty('--pf',Math.max(.3,Math.min(1,v.clientHeight/s.scrollHeight)))
-}
-
 function clock(){
   let n=new Date,w='日一二三四五六';
-  $('date').textContent=`${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日(${w[n.getDay()]})`;
+  $('date').textContent=`${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日 (${w[n.getDay()]})`;
   $('time').textContent=`${n.getHours()>=12?'下午':'上午'}${String(n.getHours()%12||12).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
-  fit()
 }
 
 async function weather(){
@@ -141,7 +353,6 @@ async function weather(){
     $('desc').textContent=r?'有驟雨':'大致天晴';
     $('next').textContent=r>=10?'高':r?'中':'低';
     $('station').textContent=t.place+'站';
-    fit()
   }catch(e){
     $('station').textContent='數據連線中...'
   }
@@ -154,7 +365,10 @@ async function allRoutes(){
   return routes
 }
 
-let groups=[['s1',[['3D','觀塘','慈雲山','往 慈雲山(中)',10],['3M','彩雲','慈雲山','往 慈雲山(北)',5],['203E','彩虹','九龍站','往 九龍站',2]]],['s2',[['3D','慈雲山','觀塘','往 觀塘(裕民坊)',8],['3M','慈雲山','彩雲','往 彩雲',8],['203E','九龍站','彩虹','往 彩虹',25]]]];
+let groups=[
+  ['s1',[['3D','觀塘','慈雲山','往 慈雲山(中)',10],['3M','彩雲','慈雲山','往 慈雲山(北)',5],['203E','彩虹','九龍站','往 九龍站',2]]],
+  ['s2',[['3D','慈雲山','觀塘','往 觀塘(裕民坊)',8],['3M','慈雲山','彩雲','往 彩雲',8],['203E','九龍站','彩虹','往 彩虹',25]]]
+];
 
 function tm(x){
   let d=new Date(x),h=d.getHours();
@@ -177,13 +391,12 @@ function row(c,a){
     let m=Math.max(0,Math.round((new Date(x.eta)-Date.now())/6e4));
     return`<div class="eta"><div class="eta-clock">${tm(x.eta)}</div><div class="eta-min">${m?m+'分鐘':'即將到達'}</div></div>`
   }).join('')||'<div class="no-bus">暫無即時班次</div>';
-  return`<div class="route"><div class="route-inner"><div class="route-meta"><div class="route-no">${c[0]}</div><div class="route-dest">${c[3]}</div></div><div class="etas">${z}</div></div></div>`
+  return`<div class="route"><div class="route-meta"><div class="route-no">${c[0]}</div><div class="route-dest">${c[3]}</div></div><div class="etas">${z}</div></div>`
 }
 
 async function buses(){
   await Promise.all(groups.map(async([id,a])=>$(id).innerHTML=(await Promise.all(a.map(eta))).map((x,i)=>row(a[i],x)).join('')));
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
-  fit()
 }
 
 async function fetchNews(){
@@ -199,7 +412,6 @@ async function fetchNews(){
   }
 }
 
-addEventListener('resize',fit);
 clock();
 weather();
 buses();
