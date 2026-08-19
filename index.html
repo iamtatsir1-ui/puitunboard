@@ -219,7 +219,7 @@ main{
 .eta-min{font-size:22px;font-weight:900;color:#2563eb;line-height:1.1}
 .no-bus{padding:10px;color:#94a3b8;font-weight:700;font-size:16px}
 
-/* 底部走馬燈 (CSS 物理動畫版) */
+/* 底部走馬燈 */
 footer{
   display:flex;
   align-items:center;
@@ -229,7 +229,7 @@ footer{
 }
 .tag{
   height:100%;
-  width:220px;
+  width:260px;
   display:flex;
   flex-direction:column;
   justify-content:center;
@@ -241,9 +241,48 @@ footer{
   font-weight:900;
   line-height:1;
   z-index:2;
+  position:relative;
+  padding:4px 8px;
 }
-.rthk{font-size:32px;letter-spacing:1px}
-.news-label{font-size:18px;margin-top:4px}
+.rthk{font-size:26px;letter-spacing:1px}
+.news-label{font-size:15px;margin-top:2px}
+
+/* 走馬燈速度自訂控制器 */
+.speed-control{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  margin-top:6px;
+  background:rgba(0,0,0,0.25);
+  padding:3px 8px;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:700;
+  width:92%;
+}
+.speed-control span{
+  font-size:12px;
+  color:#fecaca;
+  white-space:nowrap;
+}
+.speed-control input{
+  width:55px;
+  height:24px;
+  background:#fff;
+  color:#0f172a;
+  border:1px solid #cbd5e1;
+  border-radius:5px;
+  text-align:center;
+  font-weight:900;
+  font-size:14px;
+  outline:none;
+}
+.speed-control input:focus{
+  border-color:#38bdf8;
+  box-shadow:0 0 0 2px rgba(56,189,248,0.4);
+}
+
 .marquee-wrap{
   flex:1;
   overflow:hidden;
@@ -313,7 +352,14 @@ footer{
     </section>
   </main>
   <footer>
-    <div class="tag" id="tag"><span class="rthk">NEWS</span><span class="news-label">即時新聞</span></div>
+    <div class="tag" id="tag">
+      <span class="rthk">NEWS 即時新聞</span>
+      <div class="speed-control">
+        <span>⏱️ 跑完:</span>
+        <input type="number" id="speed-input" value="285" min="5" max="3600" step="5" title="輸入多少秒跑完整條新聞">
+        <span>秒</span>
+      </div>
+    </div>
     <div class="marquee-wrap" id="marquee-wrap">
       <div class="marquee" id="marquee">香港神託會培敦中學即時氣象與交通系統運行中</div>
     </div>
@@ -325,6 +371,23 @@ const $=id=>document.getElementById(id),
       K='https://data.etabus.gov.hk/v1/transport/kmb',
       H='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc';
 let routes, stamp=0, stops={};
+let currentNewsText = '香港神託會培敦中學即時氣象與交通系統運行中';
+
+/* 安全存儲封裝（相容 Sayo 預覽環境 window.sayoStorage 與標準 localStorage） */
+const safeStore = {
+  async get(k) {
+    try {
+      if (window.sayoStorage) return await window.sayoStorage.getItem(k);
+      return localStorage.getItem(k);
+    } catch (e) { return null; }
+  },
+  async set(k, v) {
+    try {
+      if (window.sayoStorage) return await window.sayoStorage.setItem(k, String(v));
+      localStorage.setItem(k, String(v));
+    } catch (e) {}
+  }
+};
 
 /* 自動全屏等比縮放適配 */
 function autoScale() {
@@ -404,37 +467,44 @@ async function buses(){
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
 }
 
-/* ================= 嚴格按「每秒2隻字」的動態動畫控制器 ================= */
-function setMarqueeText(text) {
+/* ================= 走馬燈播放控制器 (支援自訂輸入秒數) ================= */
+function renderMarquee() {
   const m = $('marquee');
   const wrap = $('marquee-wrap');
+  const speedInput = $('speed-input');
   if (!m || !wrap) return;
 
-  m.textContent = text;
+  m.textContent = currentNewsText;
   
-  // 計算總字數（包含標點符號）
-  const charCount = text.length;
+  let duration = parseFloat(speedInput.value) || 285;
+  if (duration < 5) duration = 5;
   
-  // 核心規則：每秒播放 2 隻字
-  // 570 字 => 570 / 2 = 285 秒
-  // 為了讓右側進入到左側離開都完美符合節奏，每字給予 0.5 秒
-  const duration = Math.max(1, Math.round(charCount / 20000000));
-  
-  // 視窗寬度與文字寬度 (px)
   const wrapW = wrap.clientWidth || 1600;
-  const textW = m.scrollWidth || (charCount * 30);
+  const textW = m.scrollWidth || (currentNewsText.length * 30);
   
-  // 設置 CSS 自定義變數精確控制起點與終點
   m.style.setProperty('--start-x', wrapW + 'px');
   m.style.setProperty('--end-x', (-textW - 100) + 'px');
   
-  // 重新觸發動畫
   m.style.animation = 'none';
   m.offsetHeight; // 強制重繪
   m.style.animation = `rollPhysical ${duration}s linear infinite`;
   
-  console.log(`[走馬燈更新] 總字數: ${charCount} 字，總播放時間: ${duration} 秒 (嚴格每秒 2 隻字)`);
+  // 安全存儲秒數設定
+  safeStore.set('saved_marquee_seconds', duration);
 }
+
+// 監聽使用者輸入秒數事件
+$('speed-input').addEventListener('input', renderMarquee);
+$('speed-input').addEventListener('change', renderMarquee);
+
+// 初始化讀取先前儲存的秒數
+async function initSavedSpeed() {
+  const savedSec = await safeStore.get('saved_marquee_seconds');
+  if (savedSec) {
+    $('speed-input').value = savedSec;
+  }
+}
+initSavedSpeed();
 
 async function fetchNews(){
   try{
@@ -442,11 +512,13 @@ async function fetchNews(){
     if(!r.ok)throw Error();
     let data=await r.json();
     if(data&&data.length>0){
-      setMarqueeText(data.join('  ✦  '));
+      currentNewsText = data.join('  ✦  ');
+      renderMarquee();
       return;
     }
   }catch(e){}
-  setMarqueeText('香港神託會培敦中學即時氣象與交通系統運行中');
+  currentNewsText = '香港神託會培敦中學即時氣象與交通系統運行中';
+  renderMarquee();
 }
 
 clock();
