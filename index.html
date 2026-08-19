@@ -244,7 +244,7 @@ footer{
   position:relative;
   padding:4px 8px;
 }
-.rthk{font-size:26px;letter-spacing:1px}
+.rthk{font-size:24px;letter-spacing:1px}
 .news-label{font-size:15px;margin-top:2px}
 
 /* 走馬燈速度自訂控制器 */
@@ -252,10 +252,10 @@ footer{
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:5px;
+  gap:6px;
   margin-top:6px;
   background:rgba(0,0,0,0.25);
-  padding:3px 8px;
+  padding:3px 10px;
   border-radius:8px;
   font-size:13px;
   font-weight:700;
@@ -267,7 +267,7 @@ footer{
   white-space:nowrap;
 }
 .speed-control input{
-  width:55px;
+  width:70px;
   height:24px;
   background:#fff;
   color:#0f172a;
@@ -300,12 +300,23 @@ footer{
   will-change:transform;
 }
 
-@keyframes rollPhysical {
+/* 向左滾動（數字 > 0：數值越大越快） */
+@keyframes rollLeft {
   0% {
     transform: translateX(var(--start-x, 1600px));
   }
   100% {
     transform: translateX(var(--end-x, -2000px));
+  }
+}
+
+/* 向右滾動（數字 < 0：數值越小/越負越快） */
+@keyframes rollRight {
+  0% {
+    transform: translateX(var(--end-x, -2000px));
+  }
+  100% {
+    transform: translateX(var(--start-x, 1600px));
   }
 }
 </style>
@@ -355,9 +366,8 @@ footer{
     <div class="tag" id="tag">
       <span class="rthk">NEWS 即時新聞</span>
       <div class="speed-control">
-        <span>⏱️ 跑完:</span>
-        <input type="number" id="speed-input" value="285" min="5" max="3600" step="5" title="輸入多少秒跑完整條新聞">
-        <span>秒</span>
+        <span>⚡ 速度:</span>
+        <input type="number" id="speed-input" value="50" step="5" title="數字>0：更大越快(向左)；數字<0：更小越快(向右)">
       </div>
     </div>
     <div class="marquee-wrap" id="marquee-wrap">
@@ -467,7 +477,7 @@ async function buses(){
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
 }
 
-/* ================= 走馬燈播放控制器 (支援自訂輸入秒數) ================= */
+/* ================= 走馬燈播放控制器 (支援正向/反向速度調節) ================= */
 function renderMarquee() {
   const m = $('marquee');
   const wrap = $('marquee-wrap');
@@ -476,32 +486,46 @@ function renderMarquee() {
 
   m.textContent = currentNewsText;
   
-  let duration = parseFloat(speedInput.value) || 285;
-  if (duration < 5) duration = 5;
+  // 讀取速度數值 S
+  let val = parseFloat(speedInput.value);
+  if (isNaN(val)) val = 50;
   
   const wrapW = wrap.clientWidth || 1600;
   const textW = m.scrollWidth || (currentNewsText.length * 30);
+  const totalDist = wrapW + textW + 100;
   
   m.style.setProperty('--start-x', wrapW + 'px');
   m.style.setProperty('--end-x', (-textW - 100) + 'px');
   
-  m.style.animation = 'none';
-  m.offsetHeight; // 強制重繪
-  m.style.animation = `rollPhysical ${duration}s linear infinite`;
+  const absSpeed = Math.abs(val);
   
-  // 安全存儲秒數設定
-  safeStore.set('saved_marquee_seconds', duration);
+  if (absSpeed === 0) {
+    // 速度為 0 時停止播放
+    m.style.animation = 'none';
+  } else {
+    // 計算滾動總花費秒數 (總距離 / 速度大小)，數值絕對值越大，秒數越短，速度越快
+    const duration = totalDist / absSpeed;
+    // val > 0 為正向向左滾動；val < 0 為反向向右滾動
+    const animName = val > 0 ? 'rollLeft' : 'rollRight';
+    
+    m.style.animation = 'none';
+    m.offsetHeight; // 強制重繪
+    m.style.animation = `${animName} ${duration.toFixed(2)}s linear infinite`;
+  }
+  
+  // 安全存儲速度設定
+  safeStore.set('saved_marquee_speed', val);
 }
 
-// 監聽使用者輸入秒數事件
+// 監聽使用者輸入秒數/速度事件
 $('speed-input').addEventListener('input', renderMarquee);
 $('speed-input').addEventListener('change', renderMarquee);
 
-// 初始化讀取先前儲存的秒數
+// 初始化讀取先前儲存的速度設定
 async function initSavedSpeed() {
-  const savedSec = await safeStore.get('saved_marquee_seconds');
-  if (savedSec) {
-    $('speed-input').value = savedSec;
+  const savedSpeed = await safeStore.get('saved_marquee_speed');
+  if (savedSpeed !== null && savedSpeed !== undefined && savedSpeed !== '') {
+    $('speed-input').value = savedSpeed;
   }
 }
 initSavedSpeed();
