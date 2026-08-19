@@ -19,28 +19,35 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Fetch News API and Generate JSON
+      - name: Install OpenCC (Simplified to Traditional Chinese)
+        run: npm install opencc-js
+
+      - name: Fetch News API and Convert to Traditional Chinese
         env:
           NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
         run: |
           node -e '
           const fs = require("fs");
+          const OpenCC = require("opencc-js");
+          // 設定轉換規則為：簡體轉換為香港繁體 (hk)
+          const converter = OpenCC.Converter({ from: "cn", to: "hk" });
+
           async function getNews() {
             const key = process.env.NEWS_API_KEY;
             try {
-              // 直接結合 country=hk 與 language=zh 抓取香港中文新聞
               const res = await fetch(`https://newsapi.org/v2/top-headlines?country=hk&language=zh&pageSize=10&apiKey=${key}`);
               const data = await res.json();
 
               let newsList = [];
               if (data.articles && data.articles.length > 0) {
-                newsList = data.articles.map(a => a.title);
+                // 自動將所有新聞標題轉為繁體中文
+                newsList = data.articles.map(a => converter(a.title));
               } else {
                 newsList = ["香港神託會培敦中學即時氣象與交通系統運行中"];
               }
 
               fs.writeFileSync("news.json", JSON.stringify(newsList, null, 2));
-              console.log("news.json generated successfully.");
+              console.log("news.json with Traditional Chinese generated successfully.");
             } catch (err) {
               console.error(err);
               process.exit(1);
@@ -54,4 +61,4 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add news.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update news.json" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update news.json (Traditional Chinese)" && git push)
