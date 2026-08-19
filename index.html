@@ -253,7 +253,7 @@ footer{
 .marquee{
   display:inline-block;
   padding-left:100%;
-  animation:roll 100s linear infinite;
+  animation:roll var(--marquee-duration, 10s) linear infinite;
   font-size:30px;
   font-weight:800;
   color:#0f172a;
@@ -319,15 +319,13 @@ const $=id=>document.getElementById(id),
       H='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc';
 let routes, stamp=0, stops={};
 
-/* 自動全屏等比縮放適配（支援 1080p、4K、平板、窄屏等任何電視/顯示器） */
+/* 自動全屏等比縮放適配 */
 function autoScale() {
   const scaler = document.getElementById('app-scaler');
   const baseW = 1920;
   const baseH = 1080;
   const winW = window.innerWidth;
   const winH = window.innerHeight;
-  
-  // 計算等比縮放係數 (contain 模式，保證 100% 內容完整可見且不變形、不溢出)
   const scale = Math.min(winW / baseW, winH / baseH);
   scaler.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
@@ -399,17 +397,38 @@ async function buses(){
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
 }
 
+/* 核心：恆速走馬燈設置函數（以預設短標語 10 秒為基準比例，等速擴展） */
+function updateMarquee(text) {
+  const m = $('marquee');
+  const wrap = document.querySelector('.marquee-wrap');
+  m.textContent = text;
+  
+  requestAnimationFrame(() => {
+    const textWidth = m.scrollWidth;
+    const wrapWidth = wrap.clientWidth || 1600;
+    const totalDistance = textWidth + wrapWidth;
+    
+    // 基準計算：預設 22 字標語 (~660px) + 視窗 (1600px) = 2260px，需時 10 秒
+    // 等效速度提升至每秒 226 像素 (226 px/s)
+    const speedPxPerSec = 226; 
+    const duration = Math.max(4, totalDistance / speedPxPerSec);
+    
+    // 動態更新 CSS 變數
+    m.style.setProperty('--marquee-duration', `${duration.toFixed(1)}s`);
+  });
+}
+
 async function fetchNews(){
   try{
     let r=await fetch('./news.json?t='+Date.now());
     if(!r.ok)throw Error();
     let data=await r.json();
     if(data&&data.length>0){
-      $('marquee').textContent=data.join(' ｜ ');
+      updateMarquee(data.join(' ｜ '));
+      return;
     }
-  }catch(e){
-    $('marquee').textContent='香港神託會培敦中學即時氣象與交通系統運行中';
-  }
+  }catch(e){}
+  updateMarquee('香港神託會培敦中學即時氣象與交通系統運行中');
 }
 
 clock();
