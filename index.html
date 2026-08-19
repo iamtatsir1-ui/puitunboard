@@ -418,7 +418,7 @@ function setMarqueeText(text) {
   // 核心規則：每秒播放 2 隻字
   // 570 字 => 570 / 2 = 285 秒
   // 為了讓右側進入到左側離開都完美符合節奏，每字給予 0.5 秒
-  const duration = Math.max(10, Math.round(charCount / 2));
+  const duration = Math.max(1, Math.round(charCount / 20));
   
   // 視窗寬度與文字寬度 (px)
   const wrapW = wrap.clientWidth || 1600;
