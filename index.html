@@ -6,7 +6,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=5.0, user-scalable=yes">
 <title>香港神託會培敦中學 - 校園氣象與交通儀表板</title>
 
-<!-- 主畫面圖示支援 (Desktop, iPhone, iPad, Android) -->
+<!-- Android / Chrome 核心：內嵌 Web App Manifest -->
+<link rel="manifest" href='data:application/manifest+json,{"name":"香港神託會培敦中學 - 校園氣象與交通儀表板","short_name":"培敦儀表板","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0f172a","icons":[{"src":"https://files.catbox.moe/55u3d5.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"https://files.catbox.moe/55u3d5.png","sizes":"512x512","type":"image/png","purpose":"any maskable"},{"src":"https://files.catbox.moe/55u3d5.png","sizes":"any","type":"image/png"}]}'>
+
+<!-- Android / Desktop 明確尺寸 Icon 標籤 -->
+<link rel="icon" type="image/png" sizes="512x512" href="https://files.catbox.moe/55u3d5.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://files.catbox.moe/55u3d5.png">
+<link rel="icon" type="image/png" sizes="96x96" href="https://files.catbox.moe/55u3d5.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://files.catbox.moe/55u3d5.png">
 <link rel="icon" type="image/png" href="https://files.catbox.moe/55u3d5.png">
 <link rel="shortcut icon" type="image/png" href="https://files.catbox.moe/55u3d5.png">
 
@@ -118,20 +125,22 @@ main{
   display:flex;
   flex-direction:column;
   min-height:0;
+  overflow:hidden;
 }
 .head{
-  font-size:32px;
+  font-size:34px;
   font-weight:900;
   display:flex;
   justify-content:space-between;
   align-items:center;
   padding-bottom:18px;
   border-bottom:3px dashed #e2e8f0;
+  flex:none;
 }
 .badge{
-  font-size:20px;
+  font-size:22px;
   font-weight:800;
-  padding:6px 18px;
+  padding:6px 20px;
   border-radius:14px;
   background:#f1f5f9;
   color:#64748b;
@@ -141,7 +150,7 @@ main{
 /* 氣象卡片 (左側 50%)：三個區塊 1.25fr : 1fr : 1fr 對稱分配 */
 .weather{
   flex:1;
-  padding-top:20px;
+  padding-top:18px;
   display:grid;
   grid-template-rows:1.25fr 1fr 1fr;
   gap:20px;
@@ -151,71 +160,83 @@ main{
 /* 第 1 格：左側氣溫 + 右側動態自適應條狀卡片 */
 .hero-container{
   background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);
-  padding:20px 32px;
+  padding:20px 28px;
   border-radius:24px;
-  border:2px solid #bfdbfe;
+  border:2.5px solid #bfdbfe;
   height:100%;
   display:flex;
   align-items:center;
-  gap:32px;
+  gap:28px;
+  min-height:0;
+  overflow:hidden;
 }
 
-/* 左側氣溫：4:3 解析度下極致大字 108px */
+/* 左側氣溫：大字極致強化 (支援自動安全縮小) */
 .naked-temp-zone{
   flex:none;
-  width:420px;
+  width:430px;
+  height:100%;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:flex-start;
-  border-right:3px dashed #bfdbfe;
-  padding-right:28px;
+  border-right:3.5px dashed #bfdbfe;
+  padding-right:24px;
+  overflow:hidden;
 }
 .naked-temp-label{
-  font-size:24px;
+  font-size:30px;
   font-weight:800;
   color:#64748b;
   letter-spacing:0.5px;
+  flex:none;
 }
 .naked-temp-val{
-  font-size:108px;
+  font-size:126px;
   font-weight:900;
   color:#1d4ed8;
   line-height:0.95;
   font-variant-numeric:tabular-nums;
-  margin:6px 0 8px 0;
-  text-shadow:0 4px 14px rgba(29,78,216,0.18);
-  letter-spacing:-1px;
+  margin:4px 0 6px 0;
+  text-shadow:0 4px 16px rgba(29,78,216,0.2);
+  letter-spacing:-2px;
+  white-space:nowrap;
+  max-width:100%;
 }
 .naked-temp-sub{
-  font-size:20px;
+  font-size:24px;
   font-weight:800;
   color:#0284c7;
+  flex:none;
 }
 
-/* 右側動態卡片容器：根據是否有警告自動切換為單卡滿高或雙卡上下平分 */
+/* 右側動態卡片容器 */
 .two-rows-container{
   flex:1;
   height:100%;
   display:flex;
   flex-direction:column;
-  gap:16px;
+  gap:14px;
   min-width:0;
+  min-height:0;
+  overflow:hidden;
 }
 
 /* 條狀卡片統一規格 */
 .info-row-card{
   background:#ffffff;
-  border:2px solid #dbeafe;
-  border-radius:18px;
+  border:2.5px solid #dbeafe;
+  border-radius:20px;
   padding:0 24px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  box-shadow:0 3px 8px rgba(3,105,161,0.04);
+  box-shadow:0 4px 12px rgba(3,105,161,0.05);
   min-width:0;
-  gap:16px;
+  min-height:0;
+  gap:18px;
   flex:1;
+  overflow:hidden;
   transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -224,54 +245,50 @@ main{
   padding:0 32px;
   background:linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border-color:#93c5fd;
-  box-shadow:0 6px 16px rgba(3,105,161,0.08);
+  box-shadow:0 8px 20px rgba(3,105,161,0.08);
 }
 .info-row-card.is-expanded .row-label-tag{
-  font-size:24px;
-  padding:8px 20px;
-  border-radius:14px;
-}
-.info-row-card.is-expanded .row-wx-emoji{
-  font-size:52px;
-}
-.info-row-card.is-expanded .row-wx-text{
-  font-size:34px;
-  line-height:1.25;
+  font-size:38px;
+  padding:10px 24px;
+  border-radius:18px;
 }
 
 .row-label-tag{
-  font-size:20px;
+  font-size:32px;
   font-weight:900;
   color:#475569;
   background:#f1f5f9;
-  padding:6px 14px;
-  border-radius:10px;
+  padding:8px 20px;
+  border-radius:14px;
   flex:none;
 }
 .row-wx-content{
   display:flex;
   align-items:center;
-  gap:16px;
+  gap:20px;
   flex:1;
   min-width:0;
+  height:100%;
+  overflow:hidden;
 }
 .row-wx-emoji{
-  font-size:34px;
+  font-size:76px;
   line-height:1;
   flex:none;
-  transition:font-size 0.3s ease;
+  transition:font-size 0.2s ease;
 }
 .row-wx-text{
-  font-size:26px;
+  font-size:46px;
   font-weight:900;
   color:#0369a1;
   white-space:normal;
   word-break:break-word;
-  line-height:1.25;
+  line-height:1.15;
   display:-webkit-box;
   -webkit-box-orient:vertical;
   overflow:hidden;
-  transition:font-size 0.3s ease;
+  max-height:100%;
+  transition:font-size 0.2s ease;
 }
 
 .row-warn-content{
@@ -280,18 +297,22 @@ main{
   gap:12px;
   flex:1;
   min-width:0;
-  overflow:visible;
+  height:100%;
+  overflow:hidden;
+  justify-content:flex-start;
 }
 .warn-strip-item{
   background:#fff7ed;
-  border:1.5px solid #fed7aa;
-  border-radius:12px;
-  padding:6px 12px;
+  border:2.5px solid #fed7aa;
+  border-radius:16px;
+  padding:8px 18px;
   display:inline-flex;
   align-items:center;
-  gap:8px;
-  min-height:44px;
-  flex:none;
+  gap:12px;
+  max-height:92%;
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
 }
 .warn-strip-icon-box{
   display:flex;
@@ -300,148 +321,197 @@ main{
   flex:none;
 }
 .warn-strip-icon-box img{
-  height:28px;
+  height:52px;
   width:auto;
-  max-width:40px;
+  max-width:68px;
   object-fit:contain;
   display:block;
 }
 .warn-strip-text{
-  font-size:18px;
+  font-size:32px;
   font-weight:900;
   color:#9a3412;
   white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  flex:1;
+  min-width:0;
 }
 
-/* 第 2 格：濕度與這刻降雨狀況 (兩小格平分) */
+/* 第 2 格 與 第 3 格：大字體與空間填滿最佳化 */
 .two-cols-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:20px;
   height:100%;
+  min-height:0;
 }
 .metric-card{
   background:#f8fafc;
-  border:2px solid #e2e8f0;
+  border:2.5px solid #e2e8f0;
   border-radius:24px;
   padding:0 30px;
   display:flex;
   flex-direction:column;
   justify-content:center;
-  gap:6px;
+  gap:8px;
   height:100%;
+  min-height:0;
+  overflow:hidden;
 }
-.label{font-size:26px;font-weight:800;color:#64748b}
-.value{font-size:52px;font-weight:900;color:#0f172a;line-height:1.1}
-.sub{font-size:18px;font-weight:600;color:#94a3b8}
+.label{font-size:32px;font-weight:800;color:#64748b;flex:none}
+.value{
+  font-size:78px;
+  font-weight:900;
+  color:#0f172a;
+  line-height:1.02;
+  white-space:nowrap;
+  max-width:100%;
+  overflow:hidden;
+}
+.sub{font-size:22px;font-weight:700;color:#94a3b8;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* 空氣質素卡片專用排版 */
 .aqhi-card-content{
   display:flex;
   align-items:baseline;
-  gap:16px;
+  gap:20px;
+  overflow:hidden;
+  max-width:100%;
 }
 .aqhi-badge{
-  font-size:22px;
+  font-size:30px;
   font-weight:900;
-  padding:4px 16px;
-  border-radius:12px;
+  padding:6px 22px;
+  border-radius:16px;
   color:#fff;
   line-height:1;
+  flex:none;
 }
 
-/* 巴士到站卡片 (右側 50%)：兩個站表格平分上下 */
+/* 巴士到站卡片 (右側 50%)：嚴格防溢出與自適應架構 */
+.bus-card{
+  overflow:hidden;
+}
 .bus-view{
   flex:1;
   display:grid;
   grid-template-rows:1fr 1fr;
   gap:20px;
-  padding-top:20px;
+  padding-top:18px;
   min-height:0;
+  overflow:hidden;
 }
 .bus-group{
   background:#f8fafc;
-  padding:18px 24px;
-  border:2px solid #e2e8f0;
+  padding:16px 22px;
+  border:2.5px solid #e2e8f0;
   border-radius:24px;
   display:flex;
   flex-direction:column;
   justify-content:space-between;
   min-height:0;
   height:100%;
+  overflow:hidden;
 }
 .bus-title{
-  font-size:30px;
+  font-size:34px;
   font-weight:900;
   color:#1e293b;
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:14px;
   padding-bottom:10px;
-  border-bottom:2px solid #e2e8f0;
+  border-bottom:2.5px solid #e2e8f0;
   flex:none;
 }
 .route-list{
   flex:1;
   display:grid;
   grid-template-rows:1fr 1fr 1fr;
-  gap:12px;
+  gap:10px;
   min-height:0;
-  padding-top:12px;
+  padding-top:10px;
+  overflow:hidden;
 }
 .route{
   background:#fff;
   border-radius:18px;
-  padding:0 22px;
+  padding:0 18px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  box-shadow:0 3px 8px rgba(0,0,0,0.03);
-  border:1.5px solid #f1f5f9;
+  box-shadow:0 4px 10px rgba(0,0,0,0.03);
+  border:2px solid #f1f5f9;
   height:100%;
   min-height:0;
+  min-width:0;
+  gap:12px;
+  overflow:hidden;
 }
 .route-meta{
   display:flex;
   align-items:center;
-  gap:20px;
+  gap:14px;
   min-width:0;
+  flex:1 1 auto;
+  overflow:hidden;
 }
 .route-no{
-  font-size:36px;
+  font-size:38px;
   font-weight:900;
   line-height:1;
   background:#00838f;
   color:#fff;
-  padding:8px 18px;
+  padding:8px 16px;
   border-radius:14px;
-  min-width:120px;
+  min-width:110px;
   text-align:center;
   flex:none;
 }
 .route-dest{
-  font-size:28px;
+  font-size:32px;
   font-weight:800;
   color:#1e293b;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+  flex:1 1 auto;
+  min-width:0;
 }
 .etas{
   display:flex;
-  gap:16px;
+  gap:12px;
   margin-left:auto;
   flex:none;
+  align-items:center;
 }
 .eta{
   background:#f1f5f9;
   border-radius:14px;
-  padding:8px 18px;
+  padding:6px 14px;
   text-align:center;
-  min-width:145px;
+  min-width:138px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  flex:none;
 }
-.eta-clock{font-size:22px;font-weight:800;color:#64748b}
-.eta-min{font-size:30px;font-weight:900;color:#2563eb;line-height:1.1}
+.eta-clock{
+  font-size:22px;
+  font-weight:800;
+  color:#64748b;
+  line-height:1.15;
+  white-space:nowrap;
+}
+.eta-min{
+  font-size:34px;
+  font-weight:900;
+  color:#2563eb;
+  line-height:1.1;
+  white-space:nowrap;
+}
 .no-bus{
   display:flex;
   align-items:center;
@@ -449,7 +519,7 @@ main{
   height:100%;
   color:#94a3b8;
   font-weight:800;
-  font-size:24px;
+  font-size:28px;
 }
 
 /* 底部走馬燈 */
@@ -542,7 +612,7 @@ footer{
       </div>
     </header>
     <main>
-      <!-- 左側 50%：氣象數據 -->
+      <!-- 左側 50%：氣象數據 (具備獨立自適應縮放，確保永不撐大破版) -->
       <section class="card">
         <div class="head">
           <span>☀️ 即時校園氣象數據</span>
@@ -550,7 +620,7 @@ footer{
         <div class="weather">
           <!-- 第 1 格：左側氣溫 + 右側動態自適應條狀卡片 -->
           <div class="hero-container">
-            <!-- 左側氣溫：4:3 解析度下極致大字 108px -->
+            <!-- 左側氣溫：大字強化 (支援防溢出縮放) -->
             <div class="naked-temp-zone">
               <span class="naked-temp-label">即時氣溫</span>
               <div class="naked-temp-val" id="temp">--.-°C</div>
@@ -559,18 +629,17 @@ footer{
 
             <!-- 右側動態卡片容器 -->
             <div class="two-rows-container" id="two-rows-container">
-              <!-- 行 1：即時純文字 + 天氣 Emoji（無警告時自動放大撐滿） -->
+              <!-- 行 1：即時純文字 + 天氣 Emoji（自適應字級與圖標縮放） -->
               <div class="info-row-card is-expanded" id="wx-card">
                 <span class="row-label-tag">即時</span>
-                <div class="row-wx-content">
+                <div class="row-wx-content" id="wx-box">
                   <span class="row-wx-emoji" id="wx-emoji">🌤️</span>
                   <span class="row-wx-text" id="desc">載入中</span>
                 </div>
               </div>
 
-              <!-- 行 2：生效警告信號（無警告時完全隱藏） -->
+              <!-- 行 2：生效警告信號（無警告時完全隱藏，多警告時自動等比縮小） -->
               <div class="info-row-card" id="warn-card" style="border-color:#fed7aa; display:none;">
-                <span class="row-label-tag" style="background:#fff7ed;color:#c2410c;">警告信號</span>
                 <div class="row-warn-content" id="warn-list"></div>
               </div>
             </div>
@@ -599,7 +668,7 @@ footer{
             </div>
             <div class="metric-card">
               <span class="label">空氣質素健康指數 (AQHI)</span>
-              <div class="aqhi-card-content">
+              <div class="aqhi-card-content" id="aqhi-box">
                 <span class="value" id="aqhi-val" style="color:#22c55e">--</span>
                 <span class="aqhi-badge" id="aqhi-level" style="background:#22c55e">--</span>
               </div>
@@ -609,7 +678,7 @@ footer{
         </div>
       </section>
 
-      <!-- 右側 50%：巴士到站時間 -->
+      <!-- 右側 50%：巴士到站時間 (具備主動防撐大自適應縮小機制) -->
       <section class="card bus-card">
         <div class="head"><span>🚌 巴士到站時間</span><span class="badge" id="bs">即時刷新</span></div>
         <div class="bus-view">
@@ -725,7 +794,7 @@ const safeStore = {
   }
 };
 
-/* 2160x1620 (4:3) 自動適應縮放：進入時保證完整看見全頁，同時保留手機雙指自由放大手勢 */
+/* 2160x1620 (4:3) 自動適應縮放 */
 function autoScale() {
   const scaler = $('app-scaler');
   const stage = $('stage-wrapper');
@@ -757,15 +826,88 @@ function clock(){
   $('time').textContent=`${n.getHours()>=12?'下午':'上午'}${String(n.getHours()%12||12).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
 }
 
+/* ================= 自動文字與圖標防溢出縮小演算法 (Auto-Fit) ================= */
+function autoFitSingleText(el, maxPt, minPt) {
+  if (!el) return;
+  let size = maxPt;
+  el.style.fontSize = size + 'px';
+  while ((el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) && size > minPt) {
+    size -= 2;
+    el.style.fontSize = size + 'px';
+  }
+}
+
+function adjustWeatherTextAndEmoji(isExpanded) {
+  const textEl = $('desc');
+  const emojiEl = $('wx-emoji');
+  if (!textEl || !emojiEl) return;
+
+  const maxText = isExpanded ? 64 : 50;
+  const minText = isExpanded ? 32 : 24;
+  const maxEmoji = isExpanded ? 110 : 80;
+  const minEmoji = isExpanded ? 50 : 40;
+
+  textEl.style.fontSize = maxText + 'px';
+  emojiEl.style.fontSize = maxEmoji + 'px';
+
+  const container = $('wx-box') || textEl.parentElement;
+  if (!container) return;
+
+  let currentText = maxText;
+  let currentEmoji = maxEmoji;
+
+  while (container.scrollHeight > container.clientHeight && currentText > minText) {
+    currentText -= 3;
+    currentEmoji = Math.max(minEmoji, currentEmoji - 4);
+    textEl.style.fontSize = currentText + 'px';
+    emojiEl.style.fontSize = currentEmoji + 'px';
+  }
+}
+
+/* ================= 巴士到站卡片專屬防撐大自適應縮放演算法 ================= */
+function autoFitBusRows() {
+  const routes = document.querySelectorAll('.route');
+  routes.forEach(route => {
+    const routeNo = route.querySelector('.route-no');
+    const routeDest = route.querySelector('.route-dest');
+    const etaClocks = route.querySelectorAll('.eta-clock');
+    const etaMins = route.querySelectorAll('.eta-min');
+    const etas = route.querySelectorAll('.eta');
+
+    let noSize = 38;
+    let destSize = 32;
+    let minSize = 34;
+    let clockSize = 22;
+    let etaMinWidth = 138;
+
+    // 檢測整行是否產生橫向溢出 (超出父容器寬度)，如果溢出則逐級安全縮小
+    let count = 0;
+    while ((route.scrollWidth > route.clientWidth || (route.parentElement && route.parentElement.scrollHeight > route.parentElement.clientHeight)) && count < 8) {
+      count++;
+      if (destSize > 22) destSize -= 2;
+      if (noSize > 28) noSize -= 2;
+      if (minSize > 24) minSize -= 2;
+      if (clockSize > 18) clockSize -= 1;
+      if (etaMinWidth > 110) etaMinWidth -= 5;
+
+      if (routeNo) routeNo.style.fontSize = noSize + 'px';
+      if (routeDest) routeDest.style.fontSize = destSize + 'px';
+      etaMins.forEach(el => el.style.fontSize = minSize + 'px');
+      etaClocks.forEach(el => el.style.fontSize = clockSize + 'px');
+      etas.forEach(el => el.style.minWidth = etaMinWidth + 'px');
+    }
+  });
+}
+
 /* ================= 氣象與環境數據整合 (5 分鐘自動刷新) ================= */
 async function updateEnvironmentData(){
   try {
-    // 1. 香港天文台即時天氣
     const d = await get(HKO_WEATHER);
     let t = d.temperature.data.find(x => x.place === '黃大仙') || d.temperature.data[0];
     let tempNum = typeof t.value === 'number' ? t.value.toFixed(1) : parseFloat(t.value).toFixed(1);
     
     $('temp').textContent = `${tempNum}°C`;
+    autoFitSingleText($('temp'), 132, 84);
 
     let iconNum = (d.icon && d.icon[0]) || 50;
     let wxInfo = WX_ICON_MAP[iconNum] || { desc: "大致天晴", emoji: "🌤️" };
@@ -773,15 +915,21 @@ async function updateEnvironmentData(){
     $('wx-emoji').textContent = wxInfo.emoji;
 
     $('hum').textContent = (d.humidity?.data[0]?.value || '--') + '%';
+    autoFitSingleText($('hum'), 82, 54);
 
     let q = d.rainfall.data.find(x => x.place === '黃大仙');
     let r = q?.max || 0;
     $('rain').textContent = parseFloat(r).toFixed(1) + ' mm';
-    $('next').textContent = r >= 10 ? '高' : (r > 0 ? '中' : '低');
+    autoFitSingleText($('rain'), 82, 54);
 
-    // 2. 警告與 AQHI
+    $('next').textContent = r >= 10 ? '高' : (r > 0 ? '中' : '低');
+    autoFitSingleText($('next'), 82, 54);
+
     await updateWarnings();
     await updateAQHI();
+
+    const isExpanded = $('wx-card').classList.contains('is-expanded');
+    adjustWeatherTextAndEmoji(isExpanded);
 
   } catch(e) {
     console.warn('天氣數據更新失敗，保留上次數值', e);
@@ -802,16 +950,20 @@ async function updateWarnings(){
     lastWarnHash = currentHash;
 
     if (activeKeys.length === 0) {
-      // 0 警告：徹底隱藏警告卡，天況卡縱向撐滿
       warnCard.style.display = 'none';
       wxCard.classList.add('is-expanded');
       list.innerHTML = '';
+      adjustWeatherTextAndEmoji(true);
       return;
     }
 
-    // 有警告生效：顯示警告卡，天況卡收縮為半高 (1fr 1fr)
     warnCard.style.display = 'flex';
     wxCard.classList.remove('is-expanded');
+
+    const count = activeKeys.length;
+    let textFontSize = count >= 3 ? 24 : (count === 2 ? 30 : 36);
+    let iconHeight = count >= 3 ? 40 : (count === 2 ? 48 : 58);
+    let itemPad = count >= 3 ? '6px 12px' : (count === 2 ? '8px 16px' : '10px 22px');
 
     const items = activeKeys.slice(0, 4).map(code => {
       const item = warnData[code];
@@ -821,26 +973,29 @@ async function updateWarnings(){
       const iconUrl = `https://www.hko.gov.hk/images/HKOWxIcon/${itemCode.toLowerCase()}.gif`;
 
       return `
-        <div class="warn-strip-item" title="${name}">
+        <div class="warn-strip-item" style="padding:${itemPad};" title="${name}">
           <div class="warn-strip-icon-box">
             <img src="${iconUrl}" 
+                 style="height:${iconHeight}px;"
                  onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-block';" 
                  alt="${name}">
-            <span style="display:none; font-size:20px; line-height:1;">${fallbackEmoji}</span>
+            <span style="display:none; font-size:${textFontSize + 4}px; line-height:1;">${fallbackEmoji}</span>
           </div>
-          <span class="warn-strip-text">${name}</span>
+          <span class="warn-strip-text" style="font-size:${textFontSize}px;">${name}</span>
         </div>
       `;
     });
 
     list.innerHTML = items.join('');
+    adjustWeatherTextAndEmoji(false);
+
   } catch(e) {
-    // 異常退避：預設隱藏警告卡
     if (lastWarnHash !== 'empty') {
       lastWarnHash = 'empty';
       warnCard.style.display = 'none';
       wxCard.classList.add('is-expanded');
       list.innerHTML = '';
+      adjustWeatherTextAndEmoji(true);
     }
   }
 }
@@ -866,6 +1021,7 @@ async function updateAQHI(){
       $('aqhi-level').textContent = theme.label;
       $('aqhi-level').style.background = theme.bg;
       $('aqhi-station').textContent = `${stationName}監測站`;
+      autoFitSingleText($('aqhi-val'), 82, 54);
       return;
     }
   } catch(e) {}
@@ -916,6 +1072,8 @@ function row(c,a){
 async function buses(){
   await Promise.all(groups.map(async([id,a])=>$(id).innerHTML=(await Promise.all(a.map(eta))).map((x,i)=>row(a[i],x)).join('')));
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
+  // 渲染完成後即時執行自適應防撐大檢測
+  autoFitBusRows();
 }
 
 /* ================= 走馬燈播放控制器 ================= */
