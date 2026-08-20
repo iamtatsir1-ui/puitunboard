@@ -6,29 +6,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=5.0, user-scalable=yes">
 <title>香港神託會培敦中學 - 校園氣象與交通儀表板</title>
 
-<!-- Android / Chrome 核心：內嵌 Web App Manifest -->
-<link rel="manifest" href='data:application/manifest+json,{"name":"香港神託會培敦中學 - 校園氣象與交通儀表板","short_name":"培敦儀表板","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0f172a","icons":[{"src":"https://files.catbox.moe/55u3d5.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"https://files.catbox.moe/55u3d5.png","sizes":"512x512","type":"image/png","purpose":"any maskable"},{"src":"https://files.catbox.moe/55u3d5.png","sizes":"any","type":"image/png"}]}'>
-
-<!-- Android / Desktop 明確尺寸 Icon 標籤 -->
-<link rel="icon" type="image/png" sizes="512x512" href="https://files.catbox.moe/55u3d5.png">
-<link rel="icon" type="image/png" sizes="192x192" href="https://files.catbox.moe/55u3d5.png">
-<link rel="icon" type="image/png" sizes="96x96" href="https://files.catbox.moe/55u3d5.png">
-<link rel="icon" type="image/png" sizes="32x32" href="https://files.catbox.moe/55u3d5.png">
-<link rel="icon" type="image/png" href="https://files.catbox.moe/55u3d5.png">
-<link rel="shortcut icon" type="image/png" href="https://files.catbox.moe/55u3d5.png">
-
-<!-- Apple iOS (iPhone / iPad) 新增到主畫面設定 -->
+<!-- Apple iOS 主畫面 Icon 及 Web App 設定 -->
 <link rel="apple-touch-icon" href="https://files.catbox.moe/55u3d5.png">
-<link rel="apple-touch-icon" sizes="152x152" href="https://files.catbox.moe/55u3d5.png">
-<link rel="apple-touch-icon" sizes="167x167" href="https://files.catbox.moe/55u3d5.png">
 <link rel="apple-touch-icon" sizes="180x180" href="https://files.catbox.moe/55u3d5.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="培敦儀表板">
 
-<!-- Android / Chrome 新增到主畫面與主題色 -->
-<meta name="mobile-web-app-capable" content="yes">
+<!-- Android / Chrome 主畫面 Icon 及 Favicon 設定 -->
+<link rel="icon" type="image/png" href="https://files.catbox.moe/55u3d5.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://files.catbox.moe/55u3d5.png">
+<link rel="icon" type="image/png" sizes="512x512" href="https://files.catbox.moe/55u3d5.png">
+<link rel="shortcut icon" href="https://files.catbox.moe/55u3d5.png">
 <meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Android / Chrome 內嵌 Web App Manifest -->
+<link rel="manifest" href='data:application/manifest+json,{"name":"香港神託會培敦中學 - 校園氣象與交通儀表板","short_name":"培敦儀表板","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0f172a","icons":[{"src":"https://files.catbox.moe/55u3d5.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"https://files.catbox.moe/55u3d5.png","sizes":"512x512","type":"image/png","purpose":"any maskable"},{"src":"https://files.catbox.moe/55u3d5.png","sizes":"any","type":"image/png"}]}'>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -171,7 +165,7 @@ main{
   overflow:hidden;
 }
 
-/* 左側氣溫：大字極致強化 (支援自動安全縮小) */
+/* 左側氣溫：大字極致強化 (支援動態漸變色與安全縮小) */
 .naked-temp-zone{
   flex:none;
   width:430px;
@@ -202,6 +196,7 @@ main{
   letter-spacing:-2px;
   white-space:nowrap;
   max-width:100%;
+  transition:color 0.4s ease, text-shadow 0.4s ease;
 }
 .naked-temp-sub{
   font-size:24px;
@@ -491,7 +486,7 @@ main{
   border-radius:14px;
   padding:6px 14px;
   text-align:center;
-  min-width:138px;
+  min-width:165px; /* 加長以完整容納 4 個中文字 (例如:「即將到達」) */
   display:flex;
   flex-direction:column;
   justify-content:center;
@@ -620,7 +615,7 @@ footer{
         <div class="weather">
           <!-- 第 1 格：左側氣溫 + 右側動態自適應條狀卡片 -->
           <div class="hero-container">
-            <!-- 左側氣溫：大字強化 (支援防溢出縮放) -->
+            <!-- 左側氣溫：大字強化 (支援防溢出縮放與漸進色) -->
             <div class="naked-temp-zone">
               <span class="naked-temp-label">即時氣溫</span>
               <div class="naked-temp-val" id="temp">--.-°C</div>
@@ -720,6 +715,25 @@ const $=id=>document.getElementById(id),
 let routes, stamp=0, stops={};
 let currentNewsText = '香港神託會培敦中學即時氣象與交通系統運行中';
 let lastWarnHash = '';
+
+/* 溫度漸進色表 (0°C至40°C完整映射) */
+const TEMP_COLOR_MAP = {
+  0: '#4A0E4E', 1: '#3A155E', 2: '#2A1C6E', 3: '#1A237E', 4: '#172A85',
+  5: '#15318C', 6: '#123993', 7: '#10409A', 8: '#0D47A1', 9: '#1157AD',
+  10: '#1567B9', 11: '#1976C5', 12: '#1D87D2', 13: '#2196DE', 14: '#25A6EA',
+  15: '#29B6F6', 16: '#28B3E4', 17: '#28B0D1', 18: '#27ACBF', 19: '#27A9AC',
+  20: '#26A69A', 21: '#51AD83', 22: '#7DB46C', 23: '#A8BC56', 24: '#D4C33F',
+  25: '#FFCA28', 26: '#FFB82D', 27: '#FFA633', 28: '#FF9438', 29: '#FF823E',
+  30: '#FF7043', 31: '#F65E3E', 32: '#EE4B3A', 33: '#E53935', 34: '#D9322F',
+  35: '#CE2A28', 36: '#C22322', 37: '#B71C1C', 38: '#931315', 39: '#6E090E'
+};
+
+function getTempColor(val) {
+  const rounded = Math.round(val);
+  if (rounded <= 0) return '#4A0E4E';
+  if (rounded >= 40) return '#4A0007';
+  return TEMP_COLOR_MAP[rounded] || '#1d4ed8';
+}
 
 /* 天文台圖標編號對照表（文字 + Emoji） */
 const WX_ICON_MAP = {
@@ -878,7 +892,7 @@ function autoFitBusRows() {
     let destSize = 32;
     let minSize = 34;
     let clockSize = 22;
-    let etaMinWidth = 138;
+    let etaMinWidth = 165;
 
     // 檢測整行是否產生橫向溢出 (超出父容器寬度)，如果溢出則逐級安全縮小
     let count = 0;
@@ -886,9 +900,9 @@ function autoFitBusRows() {
       count++;
       if (destSize > 22) destSize -= 2;
       if (noSize > 28) noSize -= 2;
-      if (minSize > 24) minSize -= 2;
+      if (minSize > 26) minSize -= 1;
       if (clockSize > 18) clockSize -= 1;
-      if (etaMinWidth > 110) etaMinWidth -= 5;
+      if (etaMinWidth > 140) etaMinWidth -= 4;
 
       if (routeNo) routeNo.style.fontSize = noSize + 'px';
       if (routeDest) routeDest.style.fontSize = destSize + 'px';
@@ -904,10 +918,18 @@ async function updateEnvironmentData(){
   try {
     const d = await get(HKO_WEATHER);
     let t = d.temperature.data.find(x => x.place === '黃大仙') || d.temperature.data[0];
-    let tempNum = typeof t.value === 'number' ? t.value.toFixed(1) : parseFloat(t.value).toFixed(1);
+    let numVal = typeof t.value === 'number' ? t.value : parseFloat(t.value);
+    let tempNum = numVal.toFixed(1);
     
-    $('temp').textContent = `${tempNum}°C`;
-    autoFitSingleText($('temp'), 132, 84);
+    const tempEl = $('temp');
+    tempEl.textContent = `${tempNum}°C`;
+    
+    // 根據溫度數值套用漸進色
+    const tempColor = getTempColor(numVal);
+    tempEl.style.color = tempColor;
+    tempEl.style.textShadow = `0 4px 16px ${tempColor}40`;
+    
+    autoFitSingleText(tempEl, 132, 84);
 
     let iconNum = (d.icon && d.icon[0]) || 50;
     let wxInfo = WX_ICON_MAP[iconNum] || { desc: "大致天晴", emoji: "🌤️" };
