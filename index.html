@@ -2,20 +2,54 @@
 <html lang="zh-HK">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- 允許使用者雙指自由放大與縮小 (user-scalable=yes, maximum-scale=5) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=5.0, user-scalable=yes">
 <title>香港神託會培敦中學 - 校園氣象與交通儀表板</title>
+
+<!-- 主畫面圖示支援 (Desktop, iPhone, iPad, Android) -->
+<link rel="icon" type="image/png" href="https://files.catbox.moe/55u3d5.png">
+<link rel="shortcut icon" type="image/png" href="https://files.catbox.moe/55u3d5.png">
+
+<!-- Apple iOS (iPhone / iPad) 新增到主畫面設定 -->
+<link rel="apple-touch-icon" href="https://files.catbox.moe/55u3d5.png">
+<link rel="apple-touch-icon" sizes="152x152" href="https://files.catbox.moe/55u3d5.png">
+<link rel="apple-touch-icon" sizes="167x167" href="https://files.catbox.moe/55u3d5.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://files.catbox.moe/55u3d5.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="培敦儀表板">
+
+<!-- Android / Chrome 新增到主畫面與主題色 -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif}
-html,body{width:100%;height:100%;overflow:hidden;background:#0f172a}
+html,body{
+  width:100%;
+  height:100%;
+  background:#0f172a;
+  touch-action:pan-x pan-y pinch-zoom;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* 最外層包裝：確保在不同螢幕尺寸下自動居中並提供滾動/平移空間 */
+#stage-wrapper{
+  width:100%;
+  min-height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
 
 /* 容器視窗：標準 4:3 比例 (2160x1620 像素基準) 根據螢幕等比縮放居中 */
 #app-scaler{
   width:2160px;
   height:1620px;
-  position:absolute;
-  top:50%;
-  left:50%;
   transform-origin:center center;
   display:grid;
   grid-template-rows:120px 1fr 130px;
@@ -24,6 +58,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0f172a}
   background:#f8fafc radial-gradient(#cbd5e1 1.5px,transparent 1.5px);
   background-size:28px 28px;
   color:#1e293b;
+  flex:none;
 }
 
 header,.card,footer{
@@ -46,16 +81,22 @@ header{
   gap:28px;
   width:100%;
 }
+
+/* 學校名稱：藍色轉橙色漸進色彩 */
 .school-name{
   font-size:42px;
-  font-weight:900;
-  color:#fff;
-  letter-spacing:.04em;
-  -webkit-text-stroke:1.6px #0369a1;
-  text-shadow:-2px -2px #0284c7, 2px -2px #0284c7, -2px 2px #0284c7, 2px 2px #0284c7;
+  font-weight:800;
+  letter-spacing:.02em;
   padding-right:28px;
   border-right:3.5px solid #cbd5e1;
+  background:linear-gradient(100deg, #0284c7 0%, #0369a1 40%, #ea580c 80%, #f97316 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  color:transparent;
+  display:inline-block;
 }
+
 .date-time-box{
   display:flex;
   align-items:center;
@@ -194,7 +235,8 @@ main{
   font-size:52px;
 }
 .info-row-card.is-expanded .row-wx-text{
-  font-size:36px;
+  font-size:34px;
+  line-height:1.25;
 }
 
 .row-label-tag{
@@ -220,12 +262,15 @@ main{
   transition:font-size 0.3s ease;
 }
 .row-wx-text{
-  font-size:28px;
+  font-size:26px;
   font-weight:900;
   color:#0369a1;
-  white-space:nowrap;
+  white-space:normal;
+  word-break:break-word;
+  line-height:1.25;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
   overflow:hidden;
-  text-overflow:ellipsis;
   transition:font-size 0.3s ease;
 }
 
@@ -485,113 +530,115 @@ footer{
 </head>
 <body>
 
-<div id="app-scaler">
-  <header>
-    <div class="header-row">
-      <div class="school-name">香港神託會培敦中學</div>
-      <div class="date-time-box">
-        <div class="date" id="date">--年--月--日</div>
-        <div class="time" id="time">--:--:--</div>
+<div id="stage-wrapper">
+  <div id="app-scaler">
+    <header>
+      <div class="header-row">
+        <div class="school-name">香港神託會培敦中學</div>
+        <div class="date-time-box">
+          <div class="date" id="date">--年--月--日</div>
+          <div class="time" id="time">--:--:--</div>
+        </div>
       </div>
-    </div>
-  </header>
-  <main>
-    <!-- 左側 50%：氣象數據 -->
-    <section class="card">
-      <div class="head">
-        <span>☀️ 即時校園氣象數據</span>
-      </div>
-      <div class="weather">
-        <!-- 第 1 格：左側氣溫 + 右側動態自適應條狀卡片 -->
-        <div class="hero-container">
-          <!-- 左側氣溫：4:3 解析度下極致大字 108px -->
-          <div class="naked-temp-zone">
-            <span class="naked-temp-label">即時氣溫</span>
-            <div class="naked-temp-val" id="temp">--.-°C</div>
-            <span class="naked-temp-sub">黃大仙氣象站</span>
-          </div>
+    </header>
+    <main>
+      <!-- 左側 50%：氣象數據 -->
+      <section class="card">
+        <div class="head">
+          <span>☀️ 即時校園氣象數據</span>
+        </div>
+        <div class="weather">
+          <!-- 第 1 格：左側氣溫 + 右側動態自適應條狀卡片 -->
+          <div class="hero-container">
+            <!-- 左側氣溫：4:3 解析度下極致大字 108px -->
+            <div class="naked-temp-zone">
+              <span class="naked-temp-label">即時氣溫</span>
+              <div class="naked-temp-val" id="temp">--.-°C</div>
+              <span class="naked-temp-sub">黃大仙氣象站</span>
+            </div>
 
-          <!-- 右側動態卡片容器 -->
-          <div class="two-rows-container" id="two-rows-container">
-            <!-- 行 1：即時純文字 + 天氣 Emoji（無警告時自動放大撐滿） -->
-            <div class="info-row-card is-expanded" id="wx-card">
-              <span class="row-label-tag">即時</span>
-              <div class="row-wx-content">
-                <span class="row-wx-emoji" id="wx-emoji">🌤️</span>
-                <span class="row-wx-text" id="desc">載入中</span>
+            <!-- 右側動態卡片容器 -->
+            <div class="two-rows-container" id="two-rows-container">
+              <!-- 行 1：即時純文字 + 天氣 Emoji（無警告時自動放大撐滿） -->
+              <div class="info-row-card is-expanded" id="wx-card">
+                <span class="row-label-tag">即時</span>
+                <div class="row-wx-content">
+                  <span class="row-wx-emoji" id="wx-emoji">🌤️</span>
+                  <span class="row-wx-text" id="desc">載入中</span>
+                </div>
+              </div>
+
+              <!-- 行 2：生效警告信號（無警告時完全隱藏） -->
+              <div class="info-row-card" id="warn-card" style="border-color:#fed7aa; display:none;">
+                <span class="row-label-tag" style="background:#fff7ed;color:#c2410c;">警告信號</span>
+                <div class="row-warn-content" id="warn-list"></div>
               </div>
             </div>
+          </div>
 
-            <!-- 行 2：生效警告信號（無警告時完全隱藏） -->
-            <div class="info-row-card" id="warn-card" style="border-color:#fed7aa; display:none;">
-              <span class="row-label-tag" style="background:#fff7ed;color:#c2410c;">警告信號</span>
-              <div class="row-warn-content" id="warn-list"></div>
+          <!-- 第 2 格：相對濕度 與 這刻降雨狀況 (兩小格平分 1:1) -->
+          <div class="two-cols-grid">
+            <div class="metric-card">
+              <span class="label">相對濕度</span>
+              <span class="value" id="hum">--%</span>
+              <span class="sub">即時環境濕度監測</span>
+            </div>
+            <div class="metric-card">
+              <span class="label">這刻降雨狀況</span>
+              <span class="value" id="rain">0.0 mm</span>
+              <span class="sub">過去一小時累積雨量</span>
+            </div>
+          </div>
+
+          <!-- 第 3 格：下一個小時降雨機率 與 空氣質素 (AQHI) (兩小格平分 1:1) -->
+          <div class="two-cols-grid">
+            <div class="metric-card">
+              <span class="label">下一個小時降雨機率</span>
+              <span class="value" id="next" style="color:#0284c7">分析中...</span>
+              <span class="sub">預報源：香港天文台天色分析</span>
+            </div>
+            <div class="metric-card">
+              <span class="label">空氣質素健康指數 (AQHI)</span>
+              <div class="aqhi-card-content">
+                <span class="value" id="aqhi-val" style="color:#22c55e">--</span>
+                <span class="aqhi-badge" id="aqhi-level" style="background:#22c55e">--</span>
+              </div>
+              <span class="sub" id="aqhi-station">黃大仙監測站</span>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- 第 2 格：相對濕度 與 這刻降雨狀況 (兩小格平分 1:1) -->
-        <div class="two-cols-grid">
-          <div class="metric-card">
-            <span class="label">相對濕度</span>
-            <span class="value" id="hum">--%</span>
-            <span class="sub">即時環境濕度監測</span>
+      <!-- 右側 50%：巴士到站時間 -->
+      <section class="card bus-card">
+        <div class="head"><span>🚌 巴士到站時間</span><span class="badge" id="bs">即時刷新</span></div>
+        <div class="bus-view">
+          <!-- 站 1：真鐸學校 -->
+          <div class="bus-group">
+            <div class="bus-title">🚏 真鐸學校</div>
+            <div class="route-list" id="s1"></div>
           </div>
-          <div class="metric-card">
-            <span class="label">這刻降雨狀況</span>
-            <span class="value" id="rain">0.0 mm</span>
-            <span class="sub">過去一小時累積雨量</span>
+          <!-- 站 2：斧山道運動場 -->
+          <div class="bus-group">
+            <div class="bus-title">🚏 斧山道運動場</div>
+            <div class="route-list" id="s2"></div>
           </div>
         </div>
-
-        <!-- 第 3 格：下一個小時降雨機率 與 空氣質素 (AQHI) (兩小格平分 1:1) -->
-        <div class="two-cols-grid">
-          <div class="metric-card">
-            <span class="label">下一個小時降雨機率</span>
-            <span class="value" id="next" style="color:#0284c7">分析中...</span>
-            <span class="sub">預報源：香港天文台天色分析</span>
-          </div>
-          <div class="metric-card">
-            <span class="label">空氣質素健康指數 (AQHI)</span>
-            <div class="aqhi-card-content">
-              <span class="value" id="aqhi-val" style="color:#22c55e">--</span>
-              <span class="aqhi-badge" id="aqhi-level" style="background:#22c55e">--</span>
-            </div>
-            <span class="sub" id="aqhi-station">黃大仙監測站</span>
-          </div>
-        </div>
+      </section>
+    </main>
+    <footer>
+      <div class="tag" id="tag">
+        <span class="rthk">RTHK 即時新聞</span>
+        <button class="speed-toggle-btn" id="speed-btn" title="點擊切換走馬燈速度">
+          <span>⏱️ 速度:</span>
+          <span id="speed-label">標準 (285秒)</span>
+        </button>
       </div>
-    </section>
-
-    <!-- 右側 50%：巴士到站時間 -->
-    <section class="card bus-card">
-      <div class="head"><span>🚌 巴士到站時間</span><span class="badge" id="bs">即時刷新</span></div>
-      <div class="bus-view">
-        <!-- 站 1：真鐸學校 -->
-        <div class="bus-group">
-          <div class="bus-title">🚏 真鐸學校</div>
-          <div class="route-list" id="s1"></div>
-        </div>
-        <!-- 站 2：斧山道運動場 -->
-        <div class="bus-group">
-          <div class="bus-title">🚏 斧山道運動場</div>
-          <div class="route-list" id="s2"></div>
-        </div>
+      <div class="marquee-wrap" id="marquee-wrap">
+        <div class="marquee" id="marquee">香港神託會培敦中學即時氣象與交通系統運行中</div>
       </div>
-    </section>
-  </main>
-  <footer>
-    <div class="tag" id="tag">
-      <span class="rthk">RTHK 即時新聞</span>
-      <button class="speed-toggle-btn" id="speed-btn" title="點擊切換走馬燈速度">
-        <span>⏱️ 速度:</span>
-        <span id="speed-label">標準 (285秒)</span>
-      </button>
-    </div>
-    <div class="marquee-wrap" id="marquee-wrap">
-      <div class="marquee" id="marquee">香港神託會培敦中學即時氣象與交通系統運行中</div>
-    </div>
-  </footer>
+    </footer>
+  </div>
 </div>
 
 <script>
@@ -678,13 +725,23 @@ const safeStore = {
   }
 };
 
-/* 2160x1620 (4:3) 自動縮放適配 */
+/* 2160x1620 (4:3) 自動適應縮放：進入時保證完整看見全頁，同時保留手機雙指自由放大手勢 */
 function autoScale() {
   const scaler = $('app-scaler');
-  const scale = Math.min(window.innerWidth / 2160, window.innerHeight / 1620);
-  scaler.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  const stage = $('stage-wrapper');
+  if (!scaler || !stage) return;
+  
+  const availW = window.innerWidth;
+  const availH = window.innerHeight;
+  const scale = Math.min(availW / 2160, availH / 1620);
+  
+  scaler.style.transform = `scale(${scale})`;
+  stage.style.width = availW + 'px';
+  stage.style.height = availH + 'px';
 }
+
 window.addEventListener('resize', autoScale);
+window.addEventListener('orientationchange', () => setTimeout(autoScale, 150));
 window.addEventListener('load', autoScale);
 autoScale();
 
