@@ -229,7 +229,7 @@ main{
   box-shadow:0 4px 12px rgba(3,105,161,0.05);
   min-width:0;
   min-height:0;
-  gap:18px;
+  gap:16px;
   flex:1;
   overflow:hidden;
   transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -243,35 +243,38 @@ main{
   box-shadow:0 8px 20px rgba(3,105,161,0.08);
 }
 .info-row-card.is-expanded .row-label-tag{
-  font-size:38px;
-  padding:10px 24px;
+  font-size:36px;
+  padding:8px 22px;
   border-radius:18px;
 }
 
 .row-label-tag{
-  font-size:32px;
+  font-size:30px;
   font-weight:900;
   color:#475569;
   background:#f1f5f9;
-  padding:8px 20px;
+  padding:6px 18px;
   border-radius:14px;
   flex:none;
 }
 .row-wx-content{
   display:flex;
   align-items:center;
-  gap:20px;
+  gap:16px;
   flex:1;
   min-width:0;
   height:100%;
   overflow:hidden;
+  justify-content:flex-start;
 }
 .row-wx-emoji{
-  font-size:76px;
+  font-size:68px;
   line-height:1;
   flex:none;
-  transition:font-size 0.2s ease;
+  transition:font-size 0.15s ease;
 }
+
+/* 允許文字換至下一行繼續，並支援自適應縮放至 100% 容納 */
 .row-wx-text{
   font-size:46px;
   font-weight:900;
@@ -279,11 +282,11 @@ main{
   white-space:normal;
   word-break:break-word;
   line-height:1.15;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-  max-height:100%;
-  transition:font-size 0.2s ease;
+  display:block;
+  overflow:visible;
+  flex:1 1 auto;
+  min-width:0;
+  transition:font-size 0.15s ease;
 }
 
 .row-warn-content{
@@ -486,7 +489,7 @@ main{
   border-radius:14px;
   padding:6px 14px;
   text-align:center;
-  min-width:165px; /* 加長以完整容納 4 個中文字 (例如:「即將到達」) */
+  min-width:165px;
   display:flex;
   flex-direction:column;
   justify-content:center;
@@ -624,7 +627,7 @@ footer{
 
             <!-- 右側動態卡片容器 -->
             <div class="two-rows-container" id="two-rows-container">
-              <!-- 行 1：即時純文字 + 天氣 Emoji（自適應字級與圖標縮放） -->
+              <!-- 行 1：即時純文字 + 天氣 Emoji（允許換行，超長時自動等比縮小至完整容納） -->
               <div class="info-row-card is-expanded" id="wx-card">
                 <span class="row-label-tag">即時</span>
                 <div class="row-wx-content" id="wx-box">
@@ -710,7 +713,6 @@ const $=id=>document.getElementById(id),
       K='https://data.etabus.gov.hk/v1/transport/kmb',
       HKO_WEATHER='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc',
       HKO_WARN='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc',
-      // 指定 DATA.GOV.HK 官方實時 API 與備用端點
       DASHBOARD_AQHI_URL='https://dashboard.data.gov.hk/api/aqhi-individual?format=json',
       FILTER_AQHI_URL='https://api.data.gov.hk/v1/filter?s=aqhi-individual-station&lang=tc';
 
@@ -842,7 +844,7 @@ function clock(){
   $('time').textContent=`${n.getHours()>=12?'下午':'上午'}${String(n.getHours()%12||12).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
 }
 
-/* ================= 自動文字與圖標防溢出縮小演算法 (Auto-Fit) ================= */
+/* ================= 單一數值文字防溢出縮小演算法 ================= */
 function autoFitSingleText(el, maxPt, minPt) {
   if (!el) return;
   let size = maxPt;
@@ -853,30 +855,33 @@ function autoFitSingleText(el, maxPt, minPt) {
   }
 }
 
+/* ================= 即時天況描述字（支援換行至下一行 + 自適應縮小至 100% 容納） ================= */
 function adjustWeatherTextAndEmoji(isExpanded) {
   const textEl = $('desc');
   const emojiEl = $('wx-emoji');
-  if (!textEl || !emojiEl) return;
+  const box = $('wx-box');
+  const card = $('wx-card');
+  if (!textEl || !emojiEl || !box || !card) return;
 
-  const maxText = isExpanded ? 64 : 50;
-  const minText = isExpanded ? 32 : 24;
-  const maxEmoji = isExpanded ? 110 : 80;
-  const minEmoji = isExpanded ? 50 : 40;
+  // 根據展開或收合狀態給予最佳初始字級
+  let textPt = isExpanded ? 52 : 40;
+  let emojiPt = isExpanded ? 76 : 56;
+  const minTextPt = 16;  // 最低保底字級
+  const minEmojiPt = 28;
 
-  textEl.style.fontSize = maxText + 'px';
-  emojiEl.style.fontSize = maxEmoji + 'px';
+  textEl.style.fontSize = textPt + 'px';
+  emojiEl.style.fontSize = emojiPt + 'px';
 
-  const container = $('wx-box') || textEl.parentElement;
-  if (!container) return;
-
-  let currentText = maxText;
-  let currentEmoji = maxEmoji;
-
-  while (container.scrollHeight > container.clientHeight && currentText > minText) {
-    currentText -= 3;
-    currentEmoji = Math.max(minEmoji, currentEmoji - 4);
-    textEl.style.fontSize = currentText + 'px';
-    emojiEl.style.fontSize = currentEmoji + 'px';
+  // 檢測是否溢出（高度超出卡片或寬度超出容器）：如換行後仍未能完全顯示，自動逐級等比縮小
+  let guard = 0;
+  while (guard < 45 && (box.scrollHeight > box.clientHeight || box.scrollWidth > box.clientWidth || textEl.scrollHeight > card.clientHeight - 16) && textPt > minTextPt) {
+    guard++;
+    textPt -= 1.5;
+    if (emojiPt > minEmojiPt && guard % 2 === 0) {
+      emojiPt -= 2;
+    }
+    textEl.style.fontSize = textPt + 'px';
+    emojiEl.style.fontSize = emojiPt + 'px';
   }
 }
 
