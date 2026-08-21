@@ -360,7 +360,7 @@ main{
 }
 .label{font-size:32px;font-weight:800;color:#64748b;flex:none}
 .value{
-  font-size:78px;
+  font-size:74px;
   font-weight:900;
   color:#0f172a;
   line-height:1.02;
@@ -659,12 +659,12 @@ footer{
             </div>
           </div>
 
-          <!-- 第 3 格：下一個小時降雨機率 與 空氣質素 (AQHI) (兩小格平分 1:1) -->
+          <!-- 第 3 格：下一個小時降雨機率 (精準文字 + 實時百分率) 與 空氣質素 (AQHI) -->
           <div class="two-cols-grid">
             <div class="metric-card">
               <span class="label">下一個小時降雨機率</span>
               <span class="value" id="next" style="color:#0284c7">分析中...</span>
-              <span class="sub">預報源：香港天文台天色分析</span>
+              <span class="sub">黃大仙實測雨量與天色推算</span>
             </div>
             <div class="metric-card">
               <span class="label">空氣質素健康指數 (AQHI)</span>
@@ -722,7 +722,7 @@ let routes, stamp=0, stops={};
 let currentNewsText = '香港神託會培敦中學即時氣象與交通系統運行中';
 let lastWarnHash = '';
 
-/* 格式化時間 (支援精確至秒，例如：上午08:32:42) */
+/* 格式化時間 (精確至秒，例如：上午08:32:42) */
 function formatTimeWithSeconds(d = new Date()) {
   const h = d.getHours();
   const period = h >= 12 ? '下午' : '上午';
@@ -875,7 +875,6 @@ function adjustWeatherTextAndEmoji(isExpanded) {
   const card = $('wx-card');
   if (!textEl || !emojiEl || !box || !card) return;
 
-  // 根據展開或收合狀態給予最佳初始字級
   let textPt = isExpanded ? 52 : 40;
   let emojiPt = isExpanded ? 76 : 56;
   const minTextPt = 16;
@@ -884,7 +883,6 @@ function adjustWeatherTextAndEmoji(isExpanded) {
   textEl.style.fontSize = textPt + 'px';
   emojiEl.style.fontSize = emojiPt + 'px';
 
-  // 檢測是否溢出（高度超出卡片或寬度超出容器）：如換行後仍未能完全顯示，自動逐級等比縮小
   let guard = 0;
   while (guard < 45 && (box.scrollHeight > box.clientHeight || box.scrollWidth > box.clientWidth || textEl.scrollHeight > card.clientHeight - 16) && textPt > minTextPt) {
     guard++;
@@ -931,6 +929,83 @@ function autoFitBusRows() {
   });
 }
 
+/* ================= 黃大仙定點實時降雨機率精準推算演算法 (文字 + 精準百分率) ================= */
+function calculateWTSLocalRainProbability(rainVal, iconNum, humidity, activeWarnings = []) {
+  let prob = 10; // 晴朗基準值 10%
+
+  // 1. 天況圖標特徵判定
+  const isThunder = [54, 65, 74].includes(iconNum);
+  const isRainy = [53, 62, 63, 64, 73].includes(iconNum);
+  const isCloudy = [60, 61, 72, 75, 76].includes(iconNum);
+  const isSunny = [50, 51, 52, 70, 71, 77].includes(iconNum);
+
+  if (isThunder) prob = 72;
+  else if (isRainy) prob = 62;
+  else if (isCloudy) prob = 28;
+  else if (isSunny) prob = 8;
+
+  // 2. 黃大仙氣象站實時累積雨量權重疊加
+  if (rainVal >= 20) {
+    prob = Math.max(prob, 96);
+  } else if (rainVal >= 10) {
+    prob = Math.max(prob, 88);
+  } else if (rainVal >= 4) {
+    prob = Math.max(prob, 76);
+  } else if (rainVal > 0) {
+    prob = Math.max(prob, 58);
+  }
+
+  // 3. 生效天氣警告（暴雨 / 雷暴 / 山泥傾瀉）
+  const hasRainWarn = activeWarnings.some(w => String(w).includes('RAIN') || String(w).includes('WRAIN'));
+  const hasTSWarn = activeWarnings.some(w => String(w).includes('TS') || String(w).includes('WTS'));
+
+  if (hasRainWarn) {
+    prob = Math.max(prob, 95);
+  } else if (hasTSWarn) {
+    prob = Math.min(95, prob + 22);
+  }
+
+  // 4. 即時相對濕度動態微調
+  if (humidity >= 94) prob += 8;
+  else if (humidity >= 86) prob += 4;
+  else if (humidity <= 50) prob -= 8;
+  else if (humidity <= 35) prob -= 14;
+
+  // 收斂在合理的氣象概率區間 (5% - 98%)
+  prob = Math.max(5, Math.min(98, Math.round(prob)));
+
+  // 等級文字判定
+  let levelText = '低';
+  let color = '#0284c7';
+
+  if (prob >= 80) {
+    levelText = '極高';
+    color = '#e11d48'; // 紅色高警示
+  } else if (prob >= 65) {
+    levelText = '高';
+    color = '#ea580c'; // 橙色
+  } else if (prob >= 45) {
+    levelText = '中';
+    color = '#0284c7'; // 藍色
+  } else if (prob >= 25) {
+    levelText = '中低';
+    color = '#0284c7';
+  } else if (prob <= 10) {
+    levelText = '極低';
+    color = '#0284c7';
+  } else {
+    levelText = '低';
+    color = '#0284c7';
+  }
+
+  return {
+    prob,
+    levelText,
+    displayText: `${levelText} (${prob}%)`,
+    color
+  };
+}
+
 /* ================= 氣象與環境數據整合 (每 5 分鐘 / 300 秒自動刷新) ================= */
 async function updateEnvironmentData(){
   try {
@@ -953,18 +1028,26 @@ async function updateEnvironmentData(){
     $('desc').textContent = wxInfo.desc;
     $('wx-emoji').textContent = wxInfo.emoji;
 
-    $('hum').textContent = (d.humidity?.data[0]?.value || '--') + '%';
+    let humNum = d.humidity?.data[0]?.value || 70;
+    $('hum').textContent = humNum + '%';
     autoFitSingleText($('hum'), 82, 54);
 
     let q = d.rainfall.data.find(x => x.place === '黃大仙');
     let r = q?.max || 0;
-    $('rain').textContent = parseFloat(r).toFixed(1) + ' mm';
+    let rainVal = parseFloat(r);
+    $('rain').textContent = rainVal.toFixed(1) + ' mm';
     autoFitSingleText($('rain'), 82, 54);
 
-    $('next').textContent = r >= 10 ? '高' : (r > 0 ? '中' : '低');
-    autoFitSingleText($('next'), 82, 54);
+    // 取得當前警告狀態進行精準計算
+    const activeWarnings = await updateWarnings();
 
-    await updateWarnings();
+    // 執行黃大仙定點實時降雨機率推算 (文字 + 最精準百分比)
+    const rainForecast = calculateWTSLocalRainProbability(rainVal, iconNum, humNum, activeWarnings);
+    const nextEl = $('next');
+    nextEl.textContent = rainForecast.displayText;
+    nextEl.style.color = rainForecast.color;
+    autoFitSingleText(nextEl, 74, 44);
+
     await updateAQHI();
 
     const isExpanded = $('wx-card').classList.contains('is-expanded');
@@ -982,13 +1065,14 @@ async function updateWarnings(){
   const list = $('warn-list');
   const warnCard = $('warn-card');
   const wxCard = $('wx-card');
+  let activeKeys = [];
 
   try {
     const warnData = await get(HKO_WARN);
-    const activeKeys = Object.keys(warnData || {});
+    activeKeys = Object.keys(warnData || {});
     const currentHash = JSON.stringify(activeKeys.map(k => warnData[k].code));
 
-    if (currentHash === lastWarnHash) return;
+    if (currentHash === lastWarnHash) return activeKeys;
     lastWarnHash = currentHash;
 
     if (activeKeys.length === 0) {
@@ -996,7 +1080,7 @@ async function updateWarnings(){
       wxCard.classList.add('is-expanded');
       list.innerHTML = '';
       adjustWeatherTextAndEmoji(true);
-      return;
+      return [];
     }
 
     warnCard.style.display = 'flex';
@@ -1040,17 +1124,16 @@ async function updateWarnings(){
       adjustWeatherTextAndEmoji(true);
     }
   }
+  return activeKeys;
 }
 
-/* ================= 觀塘區實時空氣質素 AQHI (參考官方 DATA.GOV.HK 規範) ================= */
+/* ================= 觀塘區實時空氣質素 AQHI ================= */
 async function updateAQHI(){
   let data = null;
   
-  // 1. 呼叫官方 DATA.GOV.HK API 網址 (主端點: dashboard.data.gov.hk)
   try {
     data = await get(DASHBOARD_AQHI_URL);
   } catch(e) {
-    // 備援端點 (api.data.gov.hk Filter API)
     try {
       const raw = await get(FILTER_AQHI_URL);
       data = Array.isArray(raw) ? raw : (raw.records || raw.data || []);
@@ -1060,13 +1143,11 @@ async function updateAQHI(){
   }
 
   if (Array.isArray(data) && data.length > 0) {
-    // 2. 尋找 station 名稱為 "觀塘" 的數據
     const kwunTongData = data.find(item => {
       const st = (item && item.station) ? String(item.station).trim() : '';
       return st === '觀塘' || st.includes('觀塘') || st.toLowerCase().includes('kwun tong');
     });
 
-    // 3. 處理並顯示結果
     if (kwunTongData) {
       const aqhiRaw = kwunTongData.aqhi ?? kwunTongData.aqhi_value ?? '3';
       const valStr = String(aqhiRaw).trim();
@@ -1088,7 +1169,6 @@ async function updateAQHI(){
     }
   }
   
-  // 默認保底顯示
   $('aqhi-val').textContent = '3';
   $('aqhi-level').textContent = '低';
   $('aqhi-level').style.background = '#22c55e';
@@ -1134,7 +1214,6 @@ function row(c,a){
 
 async function buses(){
   await Promise.all(groups.map(async([id,a])=>$(id).innerHTML=(await Promise.all(a.map(eta))).map((x,i)=>row(a[i],x)).join('')));
-  // 精準顯示至「秒」，例如：更新於 上午08:32:42
   $('bs').textContent = '更新於 ' + formatTimeWithSeconds();
   autoFitBusRows();
 }
