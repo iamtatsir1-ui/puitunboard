@@ -667,7 +667,7 @@ footer{
                 <span class="value" id="aqhi-val" style="color:#22c55e">--</span>
                 <span class="aqhi-badge" id="aqhi-level" style="background:#22c55e">--</span>
               </div>
-              <span class="sub" id="aqhi-station">黃大仙監測站</span>
+              <span class="sub" id="aqhi-station">觀塘 (一般監測站)</span>
             </div>
           </div>
         </div>
@@ -710,7 +710,9 @@ const $=id=>document.getElementById(id),
       K='https://data.etabus.gov.hk/v1/transport/kmb',
       HKO_WEATHER='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc',
       HKO_WARN='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc',
-      EPD_AQHI='https://api.data.gov.hk/v1/filter?s=aqhi-individual-station&lang=tc';
+      // 指定 DATA.GOV.HK 官方實時 API 與備用端點
+      DASHBOARD_AQHI_URL='https://dashboard.data.gov.hk/api/aqhi-individual?format=json',
+      FILTER_AQHI_URL='https://api.data.gov.hk/v1/filter?s=aqhi-individual-station&lang=tc';
 
 let routes, stamp=0, stops={};
 let currentNewsText = '香港神託會培敦中學即時氣象與交通系統運行中';
@@ -894,7 +896,6 @@ function autoFitBusRows() {
     let clockSize = 22;
     let etaMinWidth = 165;
 
-    // 檢測整行是否產生橫向溢出 (超出父容器寬度)，如果溢出則逐級安全縮小
     let count = 0;
     while ((route.scrollWidth > route.clientWidth || (route.parentElement && route.parentElement.scrollHeight > route.parentElement.clientHeight)) && count < 8) {
       count++;
@@ -913,7 +914,7 @@ function autoFitBusRows() {
   });
 }
 
-/* ================= 氣象與環境數據整合 (5 分鐘自動刷新) ================= */
+/* ================= 氣象與環境數據整合 (每 5 分鐘 / 300 秒自動刷新) ================= */
 async function updateEnvironmentData(){
   try {
     const d = await get(HKO_WEATHER);
@@ -924,7 +925,6 @@ async function updateEnvironmentData(){
     const tempEl = $('temp');
     tempEl.textContent = `${tempNum}°C`;
     
-    // 根據溫度數值套用漸進色
     const tempColor = getTempColor(numVal);
     tempEl.style.color = tempColor;
     tempEl.style.textShadow = `0 4px 16px ${tempColor}40`;
@@ -1022,36 +1022,57 @@ async function updateWarnings(){
   }
 }
 
+/* ================= 觀塘區實時空氣質素 AQHI (參考官方 DATA.GOV.HK 規範) ================= */
 async function updateAQHI(){
+  let data = null;
+  
+  // 1. 呼叫官方 DATA.GOV.HK API 網址 (主端點: dashboard.data.gov.hk)
   try {
-    const raw = await get(EPD_AQHI);
-    let list = Array.isArray(raw) ? raw : (raw.records || raw.data || []);
-    
-    let match = list.find(x => (x.station || x.Station || '').includes('黃大仙'))
-             || list.find(x => (x.station || x.Station || '').includes('觀塘'))
-             || list.find(x => (x.station || x.Station || '').includes('深水埗'))
-             || list[0];
+    data = await get(DASHBOARD_AQHI_URL);
+  } catch(e) {
+    // 備援端點 (api.data.gov.hk Filter API)
+    try {
+      const raw = await get(FILTER_AQHI_URL);
+      data = Array.isArray(raw) ? raw : (raw.records || raw.data || []);
+    } catch(e2) {
+      console.warn('AQHI API 連線異常:', e2);
+    }
+  }
 
-    if (match) {
-      const val = match.aqhi || match.AQHI || match.aqhi_value || '3';
-      const stationName = match.station || match.Station || '黃大仙';
-      const numVal = parseInt(val, 10) || 3;
+  if (Array.isArray(data) && data.length > 0) {
+    // 2. 尋找 station 名稱為 "觀塘" 的數據
+    const kwunTongData = data.find(item => {
+      const st = (item && item.station) ? String(item.station).trim() : '';
+      return st === '觀塘' || st.includes('觀塘') || st.toLowerCase().includes('kwun tong');
+    });
+
+    // 3. 處理並顯示結果
+    if (kwunTongData) {
+      const aqhiRaw = kwunTongData.aqhi ?? kwunTongData.aqhi_value ?? '3';
+      const valStr = String(aqhiRaw).trim();
+      const numVal = parseInt(valStr.replace('+', ''), 10) || 3;
+      
       const theme = AQHI_THEMES.find(t => numVal <= t.max) || AQHI_THEMES[0];
+      
+      let levelText = kwunTongData.health_risk || kwunTongData.healthRisk || theme.label;
+      const riskMap = { 'Low': '低', 'Moderate': '中', 'High': '高', 'Very High': '甚高', 'Serious': '嚴重' };
+      if (riskMap[levelText]) levelText = riskMap[levelText];
 
-      $('aqhi-val').textContent = val;
+      $('aqhi-val').textContent = valStr;
       $('aqhi-val').style.color = theme.bg;
-      $('aqhi-level').textContent = theme.label;
+      $('aqhi-level').textContent = levelText;
       $('aqhi-level').style.background = theme.bg;
-      $('aqhi-station').textContent = `${stationName}監測站`;
+      $('aqhi-station').textContent = '觀塘 (一般監測站)';
       autoFitSingleText($('aqhi-val'), 82, 54);
       return;
     }
-  } catch(e) {}
+  }
   
+  // 默認保底顯示
   $('aqhi-val').textContent = '3';
   $('aqhi-level').textContent = '低';
   $('aqhi-level').style.background = '#22c55e';
-  $('aqhi-station').textContent = '黃大仙監測站';
+  $('aqhi-station').textContent = '觀塘 (一般監測站)';
 }
 
 /* ================= 巴士 ETA 到站模組 ================= */
@@ -1094,7 +1115,6 @@ function row(c,a){
 async function buses(){
   await Promise.all(groups.map(async([id,a])=>$(id).innerHTML=(await Promise.all(a.map(eta))).map((x,i)=>row(a[i],x)).join('')));
   $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
-  // 渲染完成後即時執行自適應防撐大檢測
   autoFitBusRows();
 }
 
@@ -1160,9 +1180,9 @@ initSavedSpeed();
 fetchNews();
 
 /* 嚴格定時器設定 */
-setInterval(clock, 1000);                     // 時鐘每秒更新
+setInterval(clock, 1000);                     // 時鐘每 1 秒更新
 setInterval(buses, 20000);                    // 巴士 ETA 每 20 秒更新
-setInterval(updateEnvironmentData, 300000);   // 天氣、警告與 AQHI 每 5 分鐘 (300秒) 自動更新
+setInterval(updateEnvironmentData, 300000);   // 天氣、警告與 AQHI 每 5 分鐘 (300 秒) 自動更新
 setInterval(fetchNews, 900000);                // 新聞每 15 分鐘更新
 </script>
 </body>
