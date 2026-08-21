@@ -138,6 +138,7 @@ main{
   border-radius:14px;
   background:#f1f5f9;
   color:#64748b;
+  font-variant-numeric:tabular-nums;
   transition:all .3s ease;
 }
 
@@ -614,6 +615,7 @@ footer{
       <section class="card">
         <div class="head">
           <span>☀️ 即時校園氣象數據</span>
+          <span class="badge" id="ws">即時刷新</span>
         </div>
         <div class="weather">
           <!-- 第 1 格：左側氣溫 + 右側動態自適應條狀卡片 -->
@@ -719,6 +721,16 @@ const $=id=>document.getElementById(id),
 let routes, stamp=0, stops={};
 let currentNewsText = '香港神託會培敦中學即時氣象與交通系統運行中';
 let lastWarnHash = '';
+
+/* 格式化時間 (支援精確至秒，例如：上午08:32:42) */
+function formatTimeWithSeconds(d = new Date()) {
+  const h = d.getHours();
+  const period = h >= 12 ? '下午' : '上午';
+  const hh = String(h % 12 || 12).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${period}${hh}:${mm}:${ss}`;
+}
 
 /* 溫度漸進色表 (0°C至40°C完整映射) */
 const TEMP_COLOR_MAP = {
@@ -866,7 +878,7 @@ function adjustWeatherTextAndEmoji(isExpanded) {
   // 根據展開或收合狀態給予最佳初始字級
   let textPt = isExpanded ? 52 : 40;
   let emojiPt = isExpanded ? 76 : 56;
-  const minTextPt = 16;  // 最低保底字級
+  const minTextPt = 16;
   const minEmojiPt = 28;
 
   textEl.style.fontSize = textPt + 'px';
@@ -957,6 +969,9 @@ async function updateEnvironmentData(){
 
     const isExpanded = $('wx-card').classList.contains('is-expanded');
     adjustWeatherTextAndEmoji(isExpanded);
+
+    // 更新氣象卡片右上角更新時間徽章
+    $('ws').textContent = '更新於 ' + new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
 
   } catch(e) {
     console.warn('天氣數據更新失敗，保留上次數值', e);
@@ -1119,7 +1134,8 @@ function row(c,a){
 
 async function buses(){
   await Promise.all(groups.map(async([id,a])=>$(id).innerHTML=(await Promise.all(a.map(eta))).map((x,i)=>row(a[i],x)).join('')));
-  $('bs').textContent='更新於 '+new Date().toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'});
+  // 精準顯示至「秒」，例如：更新於 上午08:32:42
+  $('bs').textContent = '更新於 ' + formatTimeWithSeconds();
   autoFitBusRows();
 }
 
