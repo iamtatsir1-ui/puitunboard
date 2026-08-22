@@ -638,7 +638,7 @@ footer{
             <!-- 左側氣溫：大字強化 (支援防溢出縮放與漸進色) -->
             <div class="naked-temp-zone">
               <span class="naked-temp-label">即時氣溫</span>
-              <div class="naked-temp-val" id="temp">--.-°C</div>
+              <div class="naked-temp-val" id="temp">--°C</div>
               <span class="naked-temp-sub">黃大仙氣象站</span>
             </div>
 
@@ -693,7 +693,7 @@ footer{
         </div>
       </section>
 
-      <!-- 右側 50%：巴士到站時間 (具備主動防撐大自適應縮小機制) -->
+      <!-- 右側 50%：巴士到站時間 (具備主動防撐大自適應縮放機制) -->
       <section class="card bus-card">
         <div class="head"><span>🚌 巴士到站時間</span><span class="badge" id="bs">即時刷新</span></div>
         <div class="bus-view">
@@ -997,7 +997,7 @@ async function updateEnvironmentData(){
     const d = await get(HKO_WEATHER);
     let t = d.temperature.data.find(x => x.place === '黃大仙') || d.temperature.data[0];
     let numVal = typeof t.value === 'number' ? t.value : parseFloat(t.value);
-    let tempNum = numVal.toFixed(1);
+    let tempNum = Math.round(numVal);
     
     const tempEl = $('temp');
     tempEl.textContent = `${tempNum}°C`;
