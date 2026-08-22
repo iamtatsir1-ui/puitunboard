@@ -370,6 +370,21 @@ main{
 }
 .sub{font-size:22px;font-weight:700;color:#94a3b8;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+/* 今日天氣簡述專屬樣式（支援雙行與自適應字型縮小） */
+.brief-value{
+  font-size:52px;
+  font-weight:900;
+  color:#0369a1;
+  line-height:1.2;
+  white-space:normal;
+  word-break:break-word;
+  max-width:100%;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+
 /* 空氣質素卡片專用排版 */
 .aqhi-card-content{
   display:flex;
@@ -659,12 +674,12 @@ footer{
             </div>
           </div>
 
-          <!-- 第 3 格：下一個小時降雨機率 (精準文字 + 實時百分率) 與 空氣質素 (AQHI) -->
+          <!-- 第 3 格：今天天氣簡述 (取自天文台今天天氣預測第一句) 與 空氣質素 (AQHI) -->
           <div class="two-cols-grid">
             <div class="metric-card">
-              <span class="label">下一個小時降雨機率</span>
-              <span class="value" id="next" style="color:#0284c7">分析中...</span>
-              <span class="sub">黃大仙實測雨量與天色推算</span>
+              <span class="label">今日天氣簡述</span>
+              <div class="brief-value" id="wx-brief">載入中...</div>
+              <span class="sub">香港天文台今日天氣預測</span>
             </div>
             <div class="metric-card">
               <span class="label">空氣質素健康指數 (AQHI)</span>
@@ -714,6 +729,7 @@ footer{
 const $=id=>document.getElementById(id),
       K='https://data.etabus.gov.hk/v1/transport/kmb',
       HKO_WEATHER='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc',
+      HKO_FLW='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc',
       HKO_WARN='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc',
       DASHBOARD_AQHI_URL='https://dashboard.data.gov.hk/api/aqhi-individual?format=json',
       FILTER_AQHI_URL='https://api.data.gov.hk/v1/filter?s=aqhi-individual-station&lang=tc';
@@ -867,6 +883,19 @@ function autoFitSingleText(el, maxPt, minPt) {
   }
 }
 
+/* ================= 今日天氣簡述防溢出縮小演算法 ================= */
+function autoFitBriefText(el, maxPt, minPt) {
+  if (!el) return;
+  let size = maxPt;
+  el.style.fontSize = size + 'px';
+  let guard = 0;
+  while (guard < 30 && (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) && size > minPt) {
+    guard++;
+    size -= 2;
+    el.style.fontSize = size + 'px';
+  }
+}
+
 /* ================= 即時天況描述字（支援換行至下一行 + 自適應縮小至 100% 容納） ================= */
 function adjustWeatherTextAndEmoji(isExpanded) {
   const textEl = $('desc');
@@ -929,81 +958,37 @@ function autoFitBusRows() {
   });
 }
 
-/* ================= 黃大仙定點實時降雨機率精準推算演算法 (文字 + 精準百分率) ================= */
-function calculateWTSLocalRainProbability(rainVal, iconNum, humidity, activeWarnings = []) {
-  let prob = 10; // 晴朗基準值 10%
-
-  // 1. 天況圖標特徵判定
-  const isThunder = [54, 65, 74].includes(iconNum);
-  const isRainy = [53, 62, 63, 64, 73].includes(iconNum);
-  const isCloudy = [60, 61, 72, 75, 76].includes(iconNum);
-  const isSunny = [50, 51, 52, 70, 71, 77].includes(iconNum);
-
-  if (isThunder) prob = 72;
-  else if (isRainy) prob = 62;
-  else if (isCloudy) prob = 28;
-  else if (isSunny) prob = 8;
-
-  // 2. 黃大仙氣象站實時累積雨量權重疊加
-  if (rainVal >= 20) {
-    prob = Math.max(prob, 96);
-  } else if (rainVal >= 10) {
-    prob = Math.max(prob, 88);
-  } else if (rainVal >= 4) {
-    prob = Math.max(prob, 76);
-  } else if (rainVal > 0) {
-    prob = Math.max(prob, 58);
+/* ================= 今日天氣簡述獲取 (取句號前的第一句) ================= */
+async function updateWeatherBrief() {
+  const briefEl = $('wx-brief');
+  if (!briefEl) return;
+  
+  try {
+    const flwData = await get(HKO_FLW);
+    let desc = flwData?.forecastDesc || '';
+    
+    if (desc) {
+      // 提取第一個中文句號「。」或英文句號「.」之前的文字
+      let match = desc.match(/^([^。.\n]+)[。.]?/);
+      let firstSentence = match ? match[1].trim() : desc.trim();
+      
+      if (firstSentence) {
+        briefEl.textContent = firstSentence + '。';
+      } else {
+        briefEl.textContent = desc.slice(0, 20) + '...';
+      }
+    } else {
+      briefEl.textContent = '大致多雲，短暫陽光。';
+    }
+  } catch (e) {
+    console.warn('天文台天氣簡述取得失敗:', e);
+    if (!briefEl.textContent || briefEl.textContent === '載入中...') {
+      briefEl.textContent = '大致多雲，短暫陽光。';
+    }
   }
-
-  // 3. 生效天氣警告（暴雨 / 雷暴 / 山泥傾瀉）
-  const hasRainWarn = activeWarnings.some(w => String(w).includes('RAIN') || String(w).includes('WRAIN'));
-  const hasTSWarn = activeWarnings.some(w => String(w).includes('TS') || String(w).includes('WTS'));
-
-  if (hasRainWarn) {
-    prob = Math.max(prob, 95);
-  } else if (hasTSWarn) {
-    prob = Math.min(95, prob + 22);
-  }
-
-  // 4. 即時相對濕度動態微調
-  if (humidity >= 94) prob += 8;
-  else if (humidity >= 86) prob += 4;
-  else if (humidity <= 50) prob -= 8;
-  else if (humidity <= 35) prob -= 14;
-
-  // 收斂在合理的氣象概率區間 (5% - 98%)
-  prob = Math.max(5, Math.min(98, Math.round(prob)));
-
-  // 等級文字判定
-  let levelText = '低';
-  let color = '#0284c7';
-
-  if (prob >= 80) {
-    levelText = '極高';
-    color = '#e11d48'; // 紅色高警示
-  } else if (prob >= 65) {
-    levelText = '高';
-    color = '#ea580c'; // 橙色
-  } else if (prob >= 45) {
-    levelText = '中';
-    color = '#0284c7'; // 藍色
-  } else if (prob >= 25) {
-    levelText = '中低';
-    color = '#0284c7';
-  } else if (prob <= 10) {
-    levelText = '極低';
-    color = '#0284c7';
-  } else {
-    levelText = '低';
-    color = '#0284c7';
-  }
-
-  return {
-    prob,
-    levelText,
-    displayText: `${levelText} (${prob}%)`,
-    color
-  };
+  
+  // 自適應調整文字大小
+  autoFitBriefText(briefEl, 52, 28);
 }
 
 /* ================= 氣象與環境數據整合 (每 5 分鐘 / 300 秒自動刷新) ================= */
@@ -1038,16 +1023,13 @@ async function updateEnvironmentData(){
     $('rain').textContent = rainVal.toFixed(1) + ' mm';
     autoFitSingleText($('rain'), 82, 54);
 
-    // 取得當前警告狀態進行精準計算
-    const activeWarnings = await updateWarnings();
+    // 更新天文台今日天氣簡述 (取第一句)
+    await updateWeatherBrief();
 
-    // 執行黃大仙定點實時降雨機率推算 (文字 + 最精準百分比)
-    const rainForecast = calculateWTSLocalRainProbability(rainVal, iconNum, humNum, activeWarnings);
-    const nextEl = $('next');
-    nextEl.textContent = rainForecast.displayText;
-    nextEl.style.color = rainForecast.color;
-    autoFitSingleText(nextEl, 74, 44);
+    // 更新警告狀態
+    await updateWarnings();
 
+    // 更新 AQHI
     await updateAQHI();
 
     const isExpanded = $('wx-card').classList.contains('is-expanded');
@@ -1282,7 +1264,7 @@ fetchNews();
 /* 嚴格定時器設定 */
 setInterval(clock, 1000);                     // 時鐘每 1 秒更新
 setInterval(buses, 20000);                    // 巴士 ETA 每 20 秒更新
-setInterval(updateEnvironmentData, 300000);   // 天氣、警告與 AQHI 每 5 分鐘 (300 秒) 自動更新
+setInterval(updateEnvironmentData, 300000);   // 天氣、簡述、警告與 AQHI 每 5 分鐘 (300 秒) 自動更新
 setInterval(fetchNews, 900000);                // 新聞每 15 分鐘更新
 </script>
 </body>
