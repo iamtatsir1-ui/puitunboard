@@ -212,18 +212,19 @@ main{
   height:100%;
   display:flex;
   flex-direction:column;
-  gap:14px;
+  justify-content:center;
+  gap:12px;
   min-width:0;
   min-height:0;
   overflow:hidden;
 }
 
-/* 條狀卡片統一規格 */
-.info-row-card{
+/* 天況卡片：精緻橫條卡片 */
+.wx-row-card{
   background:#ffffff;
   border:2.5px solid #dbeafe;
   border-radius:20px;
-  padding:0 24px;
+  padding:14px 24px;
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -236,17 +237,28 @@ main{
   transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 天況卡片放大撐滿時的強化樣式 */
-.info-row-card.is-expanded{
-  padding:0 32px;
+/* 無警告時，天況卡片撐滿整格 */
+.wx-row-card.is-expanded{
+  padding:20px 32px;
   background:linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border-color:#93c5fd;
   box-shadow:0 8px 20px rgba(3,105,161,0.08);
 }
-.info-row-card.is-expanded .row-label-tag{
+.wx-row-card.is-expanded .row-label-tag{
   font-size:36px;
   padding:8px 22px;
   border-radius:18px;
+}
+
+/* 有警告時，天況卡片保持高度，警告不霸佔大格 */
+.wx-row-card.has-warnings{
+  flex:none;
+  height:115px;
+  padding:10px 22px;
+}
+.wx-row-card.has-warnings .row-label-tag{
+  font-size:26px;
+  padding:6px 16px;
 }
 
 .row-label-tag{
@@ -290,29 +302,36 @@ main{
   transition:font-size 0.15s ease;
 }
 
-.row-warn-content{
+/* 警告卡片容器：尺寸適度緊湊，不霸佔大格，每行警告精緻呈現 */
+.warn-card-box{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  width:100%;
+  min-width:0;
+  max-height:240px;
+  overflow:hidden;
+  flex:none;
+  transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 單條警告項目樣式（固定適中高度、整行獨立顯示、換行排列、不重複） */
+.warn-strip-item{
+  background:linear-gradient(90deg, #fff7ed 0%, #ffedd5 100%);
+  border:2px solid #fdba74;
+  border-radius:14px;
+  padding:6px 16px;
   display:flex;
   align-items:center;
-  gap:12px;
-  flex:1;
+  gap:14px;
+  width:100%;
   min-width:0;
-  height:100%;
-  overflow:hidden;
-  justify-content:flex-start;
-}
-.warn-strip-item{
-  background:#fff7ed;
-  border:2.5px solid #fed7aa;
-  border-radius:16px;
-  padding:8px 18px;
-  display:inline-flex;
-  align-items:center;
-  gap:12px;
-  max-height:92%;
-  flex:1 1 auto;
-  min-width:0;
+  height:52px;
+  flex:none;
+  box-shadow:0 3px 8px rgba(234,88,12,0.06);
   overflow:hidden;
 }
+
 .warn-strip-icon-box{
   display:flex;
   align-items:center;
@@ -320,14 +339,14 @@ main{
   flex:none;
 }
 .warn-strip-icon-box img{
-  height:52px;
+  height:36px;
   width:auto;
-  max-width:68px;
+  max-width:54px;
   object-fit:contain;
   display:block;
 }
 .warn-strip-text{
-  font-size:32px;
+  font-size:26px;
   font-weight:900;
   color:#9a3412;
   white-space:nowrap;
@@ -335,6 +354,7 @@ main{
   text-overflow:ellipsis;
   flex:1;
   min-width:0;
+  line-height:1.1;
 }
 
 /* 第 2 格 與 第 3 格：大字體與空間填滿最佳化 */
@@ -644,8 +664,8 @@ footer{
 
             <!-- 右側動態卡片容器 -->
             <div class="two-rows-container" id="two-rows-container">
-              <!-- 行 1：即時純文字 + 天氣 Emoji（允許換行，超長時自動等比縮小至完整容納） -->
-              <div class="info-row-card is-expanded" id="wx-card">
+              <!-- 行 1：即時天況描述與 Emoji（始終保持充足高度，文字超長時自適應縮放） -->
+              <div class="wx-row-card is-expanded" id="wx-card">
                 <span class="row-label-tag">即時</span>
                 <div class="row-wx-content" id="wx-box">
                   <span class="row-wx-emoji" id="wx-emoji">🌤️</span>
@@ -653,10 +673,8 @@ footer{
                 </div>
               </div>
 
-              <!-- 行 2：生效警告信號（無警告時完全隱藏，多警告時自動等比縮小） -->
-              <div class="info-row-card" id="warn-card" style="border-color:#fed7aa; display:none;">
-                <div class="row-warn-content" id="warn-list"></div>
-              </div>
+              <!-- 行 2：生效警告信號（去重排重，有 N 項就分成 N 行整齊換行顯示，無警告時完全隱藏） -->
+              <div class="warn-card-box" id="warn-card" style="display:none;"></div>
             </div>
           </div>
 
@@ -731,6 +749,7 @@ const $=id=>document.getElementById(id),
       HKO_WEATHER='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc',
       HKO_FLW='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc',
       HKO_WARN='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc',
+      HKO_WARN_INFO='https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo&lang=tc',
       DASHBOARD_AQHI_URL='https://dashboard.data.gov.hk/api/aqhi-individual?format=json',
       FILTER_AQHI_URL='https://api.data.gov.hk/v1/filter?s=aqhi-individual-station&lang=tc';
 
@@ -800,12 +819,144 @@ const WX_ICON_MAP = {
   93: { desc: "冷", emoji: "🥶" }
 };
 
-/* 警告類型圖標安全 Emoji 對照 */
-const WARN_EMOJIS = {
-  WFIRE: '🔥', WFROST: '❄️', WHOT: '☀️', WCOLD: '🥶',
-  WMSGNL: '💨', WRAIN: '🌧️', WTCSGNL: '🌪️', WTMW: '🌊',
-  WTS: '⛈️', WL: '⛰️'
-};
+/* ================= 整合解析所有生效警告信號（無遺漏、精準去重、分行顯示） ================= */
+function extractAllActiveWarnings(warnsumData, warnInfoData, rhrMessages = []) {
+  const result = [];
+  const seenNames = new Set();
+
+  function addWarn(name, iconCode, emoji) {
+    if (!name || seenNames.has(name)) return;
+    seenNames.add(name);
+    result.push({ name, iconCode, emoji });
+  }
+
+  // 來源 1：rhrread.warningMessage（天文台即時文字廣播警告，精準全面）
+  const msgList = Array.isArray(rhrMessages) ? rhrMessages : (rhrMessages ? [String(rhrMessages)] : []);
+  for (const raw of msgList) {
+    const text = String(raw).trim();
+    if (!text) continue;
+
+    // 暴雨警告信號 (黑、紅、黃)
+    if (text.includes('黑色暴雨')) addWarn('黑色暴雨警告信號', 'wrainb', '⚫🌧️');
+    else if (text.includes('紅色暴雨')) addWarn('紅色暴雨警告信號', 'wrainr', '🔴🌧️');
+    else if (text.includes('黃色暴雨')) addWarn('黃色暴雨警告信號', 'wrainy', '🟡🌧️');
+    else if (text.includes('暴雨')) addWarn('暴雨警告信號', 'wrain', '🌧️');
+
+    // 熱帶氣旋警告信號 (1號、3號、8號各方向、9號、10號)
+    if (text.includes('十號') || text.includes('10號')) addWarn('十號颶風信號', 'tc10', '🔟🌪️');
+    else if (text.includes('九號') || text.includes('9號')) addWarn('九號烈風或暴風風力增強信號', 'tc9', '9️⃣🌪️');
+    else if (text.includes('八號東北') || text.includes('8號東北')) addWarn('八號東北烈風或暴風信號', 'tc8ne', '8️⃣↗️');
+    else if (text.includes('八號東南') || text.includes('8號東南')) addWarn('八號東南烈風或暴風信號', 'tc8se', '8️⃣↘️');
+    else if (text.includes('八號西北') || text.includes('8號西北')) addWarn('八號西北烈風或暴風信號', 'tc8nw', '8️⃣↖️');
+    else if (text.includes('八號西南') || text.includes('8號西南')) addWarn('八號西南烈風或暴風信號', 'tc8sw', '8️⃣↙️');
+    else if (text.includes('八號') || text.includes('8號')) addWarn('八號烈風或暴風信號', 'tc8ne', '8️⃣🌪️');
+    else if (text.includes('三號') || text.includes('3號')) addWarn('三號強風信號', 'tc3', '3️⃣🌪️');
+    else if (text.includes('一號') || text.includes('1號')) addWarn('一號戒備信號', 'tc1', '1️⃣🌪️');
+
+    // 火災危險警告 (紅、黃)
+    if (text.includes('紅色火災')) addWarn('紅色火災危險警告', 'wfirer', '🔴🔥');
+    else if (text.includes('黃色火災')) addWarn('黃色火災危險警告', 'wfirey', '🟡🔥');
+    else if (text.includes('火災')) addWarn('火災危險警告', 'wfirey', '🔥');
+
+    // 雷暴警告
+    if (text.includes('雷暴')) addWarn('雷暴警告', 'wts', '⛈️');
+
+    // 酷熱 / 寒冷天氣警告
+    if (text.includes('酷熱')) addWarn('酷熱天氣警告', 'whot', '☀️');
+    if (text.includes('寒冷')) addWarn('寒冷天氣警告', 'wcold', '🥶');
+
+    // 強烈季候風信號
+    if (text.includes('強烈季候風')) addWarn('強烈季候風信號', 'wmsgnl', '💨');
+
+    // 山泥傾瀉 / 水浸 / 霜凍 / 海嘯
+    if (text.includes('山泥傾瀉')) addWarn('山泥傾瀉警告', 'wl', '⛰️');
+    if (text.includes('新界北部水浸') || text.includes('水浸')) addWarn('新界北部水浸特別報告', 'wfnts', '🌊');
+    if (text.includes('霜凍')) addWarn('霜凍警告', 'wfrost', '❄️');
+    if (text.includes('海嘯')) addWarn('海嘯警告', 'wtmw', '🌊');
+  }
+
+  // 來源 2：warnsum 數據結構
+  if (warnsumData && typeof warnsumData === 'object') {
+    for (const [key, val] of Object.entries(warnsumData)) {
+      if (!val) continue;
+      const code = (val.code || key || '').toUpperCase();
+      const type = (val.type || '').toUpperCase();
+      const sub = (val.subtype || '').toUpperCase();
+      const name = (val.name || '').trim();
+
+      if (code === 'WRAIN') {
+        if (type === 'BLACK' || sub === 'WRAINB' || name.includes('黑')) addWarn('黑色暴雨警告信號', 'wrainb', '⚫🌧️');
+        else if (type === 'RED' || sub === 'WRAINR' || name.includes('紅')) addWarn('紅色暴雨警告信號', 'wrainr', '🔴🌧️');
+        else if (type === 'YELLOW' || sub === 'WRAINY' || name.includes('黃')) addWarn('黃色暴雨警告信號', 'wrainy', '🟡🌧️');
+        else addWarn('暴雨警告信號', 'wrain', '🌧️');
+      } else if (code === 'WTCSGNL') {
+        if (type === 'TC10' || sub === 'TC10') addWarn('十號颶風信號', 'tc10', '🔟🌪️');
+        else if (type === 'TC9' || sub === 'TC9') addWarn('九號烈風或暴風風力增強信號', 'tc9', '9️⃣🌪️');
+        else if (type === 'TC8NE' || sub === 'TC8NE') addWarn('八號東北烈風或暴風信號', 'tc8ne', '8️⃣↗️');
+        else if (type === 'TC8SE' || sub === 'TC8SE') addWarn('八號東南烈風或暴風信號', 'tc8se', '8️⃣↘️');
+        else if (type === 'TC8NW' || sub === 'TC8NW') addWarn('八號西北烈風或暴風信號', 'tc8nw', '8️⃣↖️');
+        else if (type === 'TC8SW' || sub === 'TC8SW') addWarn('八號西南烈風或暴風信號', 'tc8sw', '8️⃣↙️');
+        else if (type === 'TC3' || sub === 'TC3') addWarn('三號強風信號', 'tc3', '3️⃣🌪️');
+        else if (type === 'TC1' || sub === 'TC1') addWarn('一號戒備信號', 'tc1', '1️⃣🌪️');
+        else addWarn(name || '熱帶氣旋警告信號', 'tc1', '🌪️');
+      } else if (code === 'WFIRE') {
+        if (type === 'RED' || sub === 'WFIRER' || name.includes('紅')) addWarn('紅色火災危險警告', 'wfirer', '🔴🔥');
+        else addWarn('黃色火災危險警告', 'wfirey', '🟡🔥');
+      } else if (code === 'WTS') {
+        addWarn('雷暴警告', 'wts', '⛈️');
+      } else if (code === 'WHOT') {
+        addWarn('酷熱天氣警告', 'whot', '☀️');
+      } else if (code === 'WCOLD') {
+        addWarn('寒冷天氣警告', 'wcold', '🥶');
+      } else if (code === 'WMSGNL') {
+        addWarn('強烈季候風信號', 'wmsgnl', '💨');
+      } else if (code === 'WL') {
+        addWarn('山泥傾瀉警告', 'wl', '⛰️');
+      } else if (code === 'WFROST') {
+        addWarn('霜凍警告', 'wfrost', '❄️');
+      } else if (code === 'WTMW') {
+        addWarn('海嘯警告', 'wtmw', '🌊');
+      } else if (code === 'WFNTS' || code === 'WFL') {
+        addWarn('新界北部水浸特別報告', 'wfnts', '🌊');
+      }
+    }
+  }
+
+  // 來源 3：warningInfo 數據結構
+  if (warnInfoData && (warnInfoData.details || warnInfoData.Warning_Summary)) {
+    const list = warnInfoData.details || warnInfoData.Warning_Summary || [];
+    for (const item of list) {
+      const code = (item.warningStatementCode || item.code || '').toUpperCase();
+      const sub = (item.subtype || '').toUpperCase();
+      if (code.includes('RAIN') || sub.includes('RAIN')) {
+        if (sub.includes('WRAINB') || sub.includes('BLACK')) addWarn('黑色暴雨警告信號', 'wrainb', '⚫🌧️');
+        else if (sub.includes('WRAINR') || sub.includes('RED')) addWarn('紅色暴雨警告信號', 'wrainr', '🔴🌧️');
+        else if (sub.includes('WRAINY') || sub.includes('YELLOW')) addWarn('黃色暴雨警告信號', 'wrainy', '🟡🌧️');
+        else addWarn('暴雨警告信號', 'wrain', '🌧️');
+      } else if (code === 'WTS' || sub.includes('WTS')) {
+        addWarn('雷暴警告', 'wts', '⛈️');
+      } else if (code === 'WHOT' || sub.includes('WHOT')) {
+        addWarn('酷熱天氣警告', 'whot', '☀️');
+      } else if (code === 'WCOLD' || sub.includes('WCOLD')) {
+        addWarn('寒冷天氣警告', 'wcold', '🥶');
+      } else if (code.includes('FIRE') || sub.includes('FIRE')) {
+        if (sub.includes('RED') || sub.includes('WFIRER')) addWarn('紅色火災危險警告', 'wfirer', '🔴🔥');
+        else addWarn('黃色火災危險警告', 'wfirey', '🟡🔥');
+      } else if (code.includes('TC') || sub.includes('TC')) {
+        if (sub.includes('10')) addWarn('十號颶風信號', 'tc10', '🔟🌪️');
+        else if (sub.includes('9')) addWarn('九號烈風或暴風風力增強信號', 'tc9', '9️⃣🌪️');
+        else if (sub.includes('8NE')) addWarn('八號東北烈風或暴風信號', 'tc8ne', '8️⃣↗️');
+        else if (sub.includes('8SE')) addWarn('八號東南烈風或暴風信號', 'tc8se', '8️⃣↘️');
+        else if (sub.includes('8NW')) addWarn('八號西北烈風或暴風信號', 'tc8nw', '8️⃣↖️');
+        else if (sub.includes('8SW')) addWarn('八號西南烈風或暴風信號', 'tc8sw', '8️⃣↙️');
+        else if (sub.includes('3')) addWarn('三號強風信號', 'tc3', '3️⃣🌪️');
+        else if (sub.includes('1')) addWarn('一號戒備信號', 'tc1', '1️⃣🌪️');
+      }
+    }
+  }
+
+  return result;
+}
 
 /* AQHI 風險等級與配色 */
 const AQHI_THEMES = [
@@ -904,16 +1055,16 @@ function adjustWeatherTextAndEmoji(isExpanded) {
   const card = $('wx-card');
   if (!textEl || !emojiEl || !box || !card) return;
 
-  let textPt = isExpanded ? 52 : 40;
+  let textPt = isExpanded ? 52 : 38;
   let emojiPt = isExpanded ? 76 : 56;
-  const minTextPt = 16;
+  const minTextPt = 18;
   const minEmojiPt = 28;
 
   textEl.style.fontSize = textPt + 'px';
   emojiEl.style.fontSize = emojiPt + 'px';
 
   let guard = 0;
-  while (guard < 45 && (box.scrollHeight > box.clientHeight || box.scrollWidth > box.clientWidth || textEl.scrollHeight > card.clientHeight - 16) && textPt > minTextPt) {
+  while (guard < 45 && (box.scrollHeight > box.clientHeight || box.scrollWidth > box.clientWidth || textEl.scrollHeight > card.clientHeight - 14) && textPt > minTextPt) {
     guard++;
     textPt -= 1.5;
     if (emojiPt > minEmojiPt && guard % 2 === 0) {
@@ -1026,8 +1177,8 @@ async function updateEnvironmentData(){
     // 更新天文台今日天氣簡述 (取第一句)
     await updateWeatherBrief();
 
-    // 更新警告狀態
-    await updateWarnings();
+    // 更新警告狀態 (完整獲取所有警告、無遺漏、不重複、分行顯示、不佔滿大格)
+    await updateWarnings(d?.warningMessage);
 
     // 更新 AQHI
     await updateAQHI();
@@ -1043,70 +1194,78 @@ async function updateEnvironmentData(){
   }
 }
 
-async function updateWarnings(){
-  const list = $('warn-list');
+/* ================= 生效天氣警告信號更新模組 ================= */
+async function updateWarnings(rhrWarningMsg = []){
   const warnCard = $('warn-card');
   const wxCard = $('wx-card');
-  let activeKeys = [];
+  let warnsumData = null;
+  let warnInfoData = null;
 
   try {
-    const warnData = await get(HKO_WARN);
-    activeKeys = Object.keys(warnData || {});
-    const currentHash = JSON.stringify(activeKeys.map(k => warnData[k].code));
+    try { warnsumData = await get(HKO_WARN); } catch(e) {}
+    try { warnInfoData = await get(HKO_WARN_INFO); } catch(e) {}
 
-    if (currentHash === lastWarnHash) return activeKeys;
+    // 從所有來源（廣播文字、warnsum、warningInfo）綜合抽取所有警告
+    const uniqueWarnings = extractAllActiveWarnings(warnsumData, warnInfoData, rhrWarningMsg);
+
+    const currentHash = JSON.stringify(uniqueWarnings.map(w => w.name));
+    if (currentHash === lastWarnHash) return uniqueWarnings;
     lastWarnHash = currentHash;
 
-    if (activeKeys.length === 0) {
+    // 【沒有警告時】：完全隱藏警告卡片，即時天況卡片撐滿
+    if (uniqueWarnings.length === 0) {
       warnCard.style.display = 'none';
+      warnCard.innerHTML = '';
+      wxCard.classList.remove('has-warnings');
       wxCard.classList.add('is-expanded');
-      list.innerHTML = '';
       adjustWeatherTextAndEmoji(true);
       return [];
     }
 
+    // 【有警告時】：顯示警告卡片，天況卡片保持高度，警告卡片緊湊整齊排列
     warnCard.style.display = 'flex';
     wxCard.classList.remove('is-expanded');
+    wxCard.classList.add('has-warnings');
 
-    const count = activeKeys.length;
-    let textFontSize = count >= 3 ? 24 : (count === 2 ? 30 : 36);
-    let iconHeight = count >= 3 ? 40 : (count === 2 ? 48 : 58);
-    let itemPad = count >= 3 ? '6px 12px' : (count === 2 ? '8px 16px' : '10px 22px');
+    const count = uniqueWarnings.length;
+    let itemHeight = count >= 4 ? 44 : (count === 3 ? 48 : 52);
+    let textFontSize = count >= 4 ? 22 : (count === 3 ? 24 : 26);
+    let iconHeight = count >= 4 ? 30 : (count === 3 ? 34 : 36);
 
-    const items = activeKeys.slice(0, 4).map(code => {
-      const item = warnData[code];
-      const name = item.name || item.type || '天氣警告';
-      const itemCode = item.code || '';
-      const fallbackEmoji = WARN_EMOJIS[itemCode] || '⚠️';
-      const iconUrl = `https://www.hko.gov.hk/images/HKOWxIcon/${itemCode.toLowerCase()}.gif`;
+    // 每項警告各成獨立一行（有5項就分成5行，不佔大格）
+    const itemsHtml = uniqueWarnings.map(warn => {
+      const name = warn.name;
+      const iconCode = warn.iconCode;
+      const fallbackEmoji = warn.emoji;
+      const iconUrl = `https://www.hko.gov.hk/images/HKOWxIcon/${iconCode}.gif`;
 
       return `
-        <div class="warn-strip-item" style="padding:${itemPad};" title="${name}">
+        <div class="warn-strip-item" style="height:${itemHeight}px;" title="${name}">
           <div class="warn-strip-icon-box">
             <img src="${iconUrl}" 
                  style="height:${iconHeight}px;"
                  onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-block';" 
                  alt="${name}">
-            <span style="display:none; font-size:${textFontSize + 4}px; line-height:1;">${fallbackEmoji}</span>
+            <span style="display:none; font-size:${textFontSize + 2}px; line-height:1;">${fallbackEmoji}</span>
           </div>
           <span class="warn-strip-text" style="font-size:${textFontSize}px;">${name}</span>
         </div>
       `;
-    });
+    }).join('');
 
-    list.innerHTML = items.join('');
+    warnCard.innerHTML = itemsHtml;
     adjustWeatherTextAndEmoji(false);
 
   } catch(e) {
     if (lastWarnHash !== 'empty') {
       lastWarnHash = 'empty';
       warnCard.style.display = 'none';
+      warnCard.innerHTML = '';
+      wxCard.classList.remove('has-warnings');
       wxCard.classList.add('is-expanded');
-      list.innerHTML = '';
       adjustWeatherTextAndEmoji(true);
     }
   }
-  return activeKeys;
 }
 
 /* ================= 觀塘區實時空氣質素 AQHI ================= */
